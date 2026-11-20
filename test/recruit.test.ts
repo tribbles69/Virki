@@ -10,6 +10,7 @@ import {
   recruitBlockerText,
   recruitInfo,
   trainTime,
+  SAVE_VERSION,
   UNIT_DATA,
   type GameState,
 } from '../src/sim';
@@ -146,19 +147,21 @@ describe('recruiting', () => {
   });
 });
 
-describe('save upgrade v1 → v2', () => {
+describe('save upgrade from v1', () => {
   it('a v0.1 save loads with an empty army and keeps everything else', () => {
-    const v2 = newGame('old', T0);
-    v2.buildings.woodcutter = 7;
-    v2.resources.wood = 812;
-    const v1 = JSON.parse(JSON.stringify(v2));
+    const fresh = newGame('old', T0);
+    fresh.buildings.woodcutter = 7;
+    fresh.resources.wood = 812;
+    const v1 = JSON.parse(JSON.stringify(fresh));
     v1.version = 1;
     delete v1.troops;
     delete v1.recruitQueue;
+    delete v1.map;
     delete v1.buildings.barracks;
 
     const loaded = migrateSave(v1);
-    expect(loaded.version).toBe(2);
+    expect(loaded.version).toBe(SAVE_VERSION);
+    expect(loaded.map).toEqual(fresh.map);
     expect(loaded.troops).toEqual({ spear: 0, sword: 0, axe: 0 });
     expect(loaded.recruitQueue).toEqual([]);
     expect(loaded.buildings.barracks).toBe(0);

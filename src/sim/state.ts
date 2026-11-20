@@ -3,9 +3,10 @@ import type { GameEvent } from './events';
 import { STARTING_RESOURCES, type ResourceId } from './data/resources';
 import { BUILDINGS, BUILDING_DATA, type BuildingId } from './data/buildings';
 import { UNITS, type UnitId } from './data/units';
+import { generateMap, type WorldMap } from './map';
 
 /** Bump when the save shape changes, and add a migration in src/game/migrate.ts. */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 /** The entire game. Plain JSON-safe data only: it is what gets saved. */
 export interface GameState {
@@ -30,6 +31,8 @@ export interface GameState {
   troops: Record<UnitId, number>;
   /** Training batches; only the first is in progress. */
   recruitQueue: RecruitBatch[];
+  /** The 15×15 map and its bandit camps. */
+  map: WorldMap;
 }
 
 export interface BuildJob {
@@ -72,5 +75,6 @@ export function newGame(seed: string, now: number): GameState {
     buildQueue: [],
     troops: Object.fromEntries(UNITS.map((u) => [u, 0])) as Record<UnitId, number>,
     recruitQueue: [],
+    map: generateMap(seed),
   };
 }

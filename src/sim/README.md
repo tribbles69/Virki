@@ -13,3 +13,4 @@ Time and randomness are passed in. `test/sim-purity.test.ts` enforces this. See 
 - `data/`: balance tables (resources, buildings). Tune numbers here, not in the logic.
 - `build.ts`: building costs and times, `upgradeInfo` (cost, time, population, and why it is blocked), `startUpgrade`, `cancelLastUpgrade`, and the `build-complete` event handler. Commands are pure: advance to now first, then apply.
 - `recruit.ts`: training soldiers. `recruit` pays for a batch up front; soldiers train one at a time (one `recruit-done` event in flight) and batches run in order. `cancelRecruit` refunds the untrained ones. Troops (home and in training) count against population.
+- `map.ts`: `generateMap(seed, playerAttack)` makes the 15×15 terrain and 8 camps (tier 1 nearest .. 8 farthest), seeded from the save. Also `distance`, `travelTime`, `armyAttack` / `armyDefence`, the rubber-band `campGarrison`, `campLoot` and `campThreat`.

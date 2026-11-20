@@ -12,7 +12,7 @@ Work down this list in order. When Aaron says "go", pick up the first unchecked 
 
 ## v0.2 — First blood
 - [x] Barracks + Spearman, Swordsman, Axeman; recruitment queue
-- [ ] 15×15 map with 8 bandit camps
+- [x] 15×15 map with 8 bandit camps
 - [ ] Marches with travel time, TW-style battle resolution, loot carry
 - [ ] Battle reports
 

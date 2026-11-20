@@ -10,3 +10,5 @@ export { defaultRules } from './rules';
 export * from './build';
 export * from './recruit';
 export * from './data/units';
+export * from './map';
+export * from './data/map';

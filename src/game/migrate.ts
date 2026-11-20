@@ -1,4 +1,16 @@
-import { BUILDINGS, BUILDING_DATA, RESOURCES, SAVE_VERSION, UNITS, type GameState } from '../sim';
+import {
+  armyAttack,
+  generateMap,
+  BUILDINGS,
+  BUILDING_DATA,
+  CAMP_COUNT,
+  MAP_SIZE,
+  RESOURCES,
+  SAVE_VERSION,
+  TERRAIN,
+  UNITS,
+  type GameState,
+} from '../sim';
 
 /**
  * Upgrades a save from version N to N+1. Add one entry each time SAVE_VERSION
@@ -8,6 +20,8 @@ type Migration = (save: any) => any;
 export const MIGRATIONS: Record<number, Migration> = {
   // v0.2: soldiers and the training queue.
   1: (s) => ({ ...s, version: 2, troops: {}, recruitQueue: [] }),
+  // v0.2: the map and its bandit camps, sized to the army the player already has.
+  2: (s) => ({ ...s, version: 3, map: generateMap(String(s.seed), armyAttack(isObj(s.troops) ? s.troops : {})) }),
 };
 
 export class SaveError extends Error {}
@@ -75,6 +89,18 @@ function normalise(s: Record<string, unknown>): GameState {
     }
   }
 
+  const map = s.map;
+  if (!isObj(map) || typeof map.terrain !== 'string' || map.terrain.length !== MAP_SIZE * MAP_SIZE) throw bad('map');
+  if (![...map.terrain].every((c) => c in TERRAIN)) throw bad('map terrain');
+  if (!Array.isArray(map.camps) || map.camps.length !== CAMP_COUNT) throw bad('camps');
+  for (const c of map.camps) {
+    if (!isObj(c) || !isNum(c.id) || !isNum(c.x) || !isNum(c.y) || !isNum(c.tier) || !isObj(c.troops) || !isObj(c.loot)) {
+      throw bad('camps');
+    }
+    for (const u of UNITS) c.troops[u] = isNum(c.troops[u]) ? c.troops[u] : 0;
+    for (const r of RESOURCES) c.loot[r] = isNum(c.loot[r]) ? c.loot[r] : 0;
+  }
+
   return {
     version: SAVE_VERSION,
     seed: s.seed,
@@ -87,5 +113,6 @@ function normalise(s: Record<string, unknown>): GameState {
     buildQueue: s.buildQueue as GameState['buildQueue'],
     troops,
     recruitQueue: s.recruitQueue as GameState['recruitQueue'],
+    map: map as unknown as GameState['map'],
   };
 }

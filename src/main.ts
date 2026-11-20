@@ -15,6 +15,7 @@ import {
   type GameState,
 } from './sim';
 import { BarracksView } from './ui/barracks';
+import { MapView } from './ui/mapview';
 import { SaveStore } from './game/db';
 import { Game, type StartResult } from './game/game';
 import { exportFileName } from './game/saveFile';
@@ -30,6 +31,7 @@ app.innerHTML = `
     <nav class="tabs" role="tablist">
       <button class="tab" role="tab" data-tab="village">Village</button>
       <button class="tab" role="tab" data-tab="barracks">Barracks</button>
+      <button class="tab" role="tab" data-tab="map">Map</button>
     </nav>
   </header>
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
@@ -95,10 +97,11 @@ async function main() {
   mainEl.innerHTML = '';
   const villagePane = document.createElement('div');
   const barracksPane = document.createElement('div');
-  villagePane.className = barracksPane.className = 'stack';
-  mainEl.append(villagePane, barracksPane);
+  const mapPane = document.createElement('div');
+  villagePane.className = barracksPane.className = mapPane.className = 'stack';
+  mainEl.append(villagePane, barracksPane, mapPane);
 
-  const panes = { village: villagePane, barracks: barracksPane } as const;
+  const panes = { village: villagePane, barracks: barracksPane, map: mapPane } as const;
   type Tab = keyof typeof panes;
   const showTab = (tab: Tab) => {
     for (const [name, pane] of Object.entries(panes)) pane.hidden = name !== tab;
@@ -117,7 +120,8 @@ async function main() {
   } catch {
     /* ignore */
   }
-  showTab(savedTab === 'barracks' ? 'barracks' : 'village');
+  showTab(savedTab && savedTab in panes ? (savedTab as Tab) : 'village');
+  const mapView = new MapView(mapPane);
 
   const barracks = new BarracksView(barracksPane, {
     recruit: async (unit, count) => {
@@ -171,6 +175,7 @@ async function main() {
     const now = Date.now();
     view.update(s, now);
     barracks.update(s, now);
+    mapView.update(s);
   };
   frame();
   setInterval(frame, 500);
