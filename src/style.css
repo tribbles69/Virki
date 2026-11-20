@@ -86,3 +86,29 @@ button.ghost { background: transparent; color: var(--ink); border: 1px solid var
 /* Footer */
 .foot { padding: 16px 16px calc(env(safe-area-inset-bottom) + 16px); text-align: center; display: flex; flex-direction: column; gap: 8px; }
 .actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+
+/* Tabs */
+.tabs { display: flex; gap: 6px; margin-top: 8px; }
+.tab {
+  flex: 1; min-height: 40px; padding: 6px 10px;
+  background: transparent; color: var(--muted);
+  border: 1px solid var(--line); border-radius: 6px;
+}
+.tab[aria-selected="true"] { background: var(--panel-2); color: var(--ink); border-color: var(--accent); }
+
+/* Barracks */
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.stack.tight { gap: 10px; }
+.qrow + .qrow { border-top: 1px solid var(--line); padding-top: 10px; }
+.small-btn { min-height: 36px; padding: 4px 12px; font-size: 0.85rem; }
+.recruit { display: flex; gap: 8px; margin-top: 10px; }
+.count {
+  flex: 1; min-width: 0; min-height: 44px; padding: 0 10px;
+  font: inherit; font-variant-numeric: tabular-nums;
+  color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 6px;
+}
+.count:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.building.locked { opacity: 0.6; }
+p.b-note:empty { display: none; }
+p.b-note { margin: 6px 0 0; }

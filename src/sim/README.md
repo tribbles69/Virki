@@ -12,3 +12,4 @@ Time and randomness are passed in. `test/sim-purity.test.ts` enforces this. See 
 - `economy.ts`: production per hour, Warehouse cap, population (Farm cap vs buildings), `canAfford`, `timeUntilAffordable`, and the `production` system.
 - `data/`: balance tables (resources, buildings). Tune numbers here, not in the logic.
 - `build.ts`: building costs and times, `upgradeInfo` (cost, time, population, and why it is blocked), `startUpgrade`, `cancelLastUpgrade`, and the `build-complete` event handler. Commands are pure: advance to now first, then apply.
+- `recruit.ts`: training soldiers. `recruit` pays for a batch up front; soldiers train one at a time (one `recruit-done` event in flight) and batches run in order. `cancelRecruit` refunds the untrained ones. Troops (home and in training) count against population.

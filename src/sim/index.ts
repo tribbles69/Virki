@@ -8,3 +8,5 @@ export * from './data/resources';
 export * from './data/buildings';
 export { defaultRules } from './rules';
 export * from './build';
+export * from './recruit';
+export * from './data/units';

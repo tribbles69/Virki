@@ -4,6 +4,7 @@ import {
   productionPerHour,
   storageCap,
   HALL_SPEED,
+  BARRACKS_SPEED,
   PRODUCERS,
   RESOURCES,
   RESOURCE_NAMES,
@@ -42,6 +43,14 @@ export function effectLine(state: GameState, b: BuildingId, nextLevel: number, m
       return maxed
         ? `Builds ${(1 / now).toFixed(1)}× faster`
         : `Builds ${Math.max(1, Math.round((now / then - 1) * 100))}% faster next level`;
+    }
+    case 'barracks': {
+      if (nextLevel === 1) return 'Trains Spearmen, Swordsmen and Axemen';
+      const now = curveValue(BARRACKS_SPEED, s.buildings.barracks);
+      const then = curveValue(BARRACKS_SPEED, nextLevel);
+      return maxed
+        ? `Trains soldiers ${(1 / now).toFixed(1)}× faster`
+        : `Trains soldiers ${Math.max(1, Math.round((now / then - 1) * 100))}% faster next level`;
     }
     default:
       return '';
