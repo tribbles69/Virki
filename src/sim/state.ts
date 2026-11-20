@@ -1,7 +1,7 @@
 import { hashSeed, type RngState } from './rng';
 import type { GameEvent } from './events';
 import { STARTING_RESOURCES, type ResourceId } from './data/resources';
-import { STARTING_LEVELS, type BuildingId } from './data/buildings';
+import { BUILDINGS, BUILDING_DATA, type BuildingId } from './data/buildings';
 
 /** Bump when the save shape changes, and add a migration in the save layer. */
 export const SAVE_VERSION = 1;
@@ -23,6 +23,20 @@ export interface GameState {
   resources: Record<ResourceId, number>;
   /** Current level of each building (0 = not built). */
   buildings: Record<BuildingId, number>;
+  /** Builds in progress, in the order they'll finish. */
+  buildQueue: BuildJob[];
+}
+
+export interface BuildJob {
+  building: BuildingId;
+  /** Level it becomes when done. */
+  toLevel: number;
+  startedAt: number;
+  finishesAt: number;
+  /** What was paid; refunded in full if cancelled. */
+  paid: Record<ResourceId, number>;
+  /** The queued 'build-complete' event. */
+  eventId: number;
 }
 
 export function newGame(seed: string, now: number): GameState {
@@ -34,6 +48,7 @@ export function newGame(seed: string, now: number): GameState {
     nextEventId: 1,
     events: [],
     resources: { ...STARTING_RESOURCES },
-    buildings: { ...STARTING_LEVELS },
+    buildings: Object.fromEntries(BUILDINGS.map((b) => [b, BUILDING_DATA[b].start])) as Record<BuildingId, number>,
+    buildQueue: [],
   };
 }

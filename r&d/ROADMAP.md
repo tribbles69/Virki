@@ -6,7 +6,7 @@ Work down this list in order. When Aaron says "go", pick up the first unchecked 
 - [x] Project scaffold: Vite + TypeScript, PWA manifest + service worker, GitHub Pages deploy
 - [x] Pure sim core: `advance(state, now)`, event queue, seeded RNG
 - [x] Resources: Wood, Stone, Ore (Copper), Population; production and warehouse cap
-- [ ] Buildings: Great Hall, Woodcutter, Quarry, Farm, Mine, Warehouse; build queue (1 slot)
+- [x] Buildings: Great Hall, Woodcutter, Quarry, Farm, Mine, Warehouse; build queue (1 slot)
 - [ ] Save/load to IndexedDB, offline catch-up, export/import save file
 - [ ] Placeholder UI: resource bar, building list with upgrade buttons and timers
 
