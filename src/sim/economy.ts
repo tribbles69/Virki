@@ -1,6 +1,7 @@
 import { curveValue } from './curve';
 import { BUILDINGS, BUILDING_DATA, type BuildingId } from './data/buildings';
 import { FARM_CAPACITY, PRODUCERS, RESOURCES, WAREHOUSE_CAPACITY, type ResourceId } from './data/resources';
+import { UNITS, UNIT_DATA } from './data/units';
 import type { GameState } from './state';
 import type { System } from './advance';
 
@@ -20,16 +21,22 @@ export function storageCap(state: GameState): number {
 export interface Population {
   /** Farm capacity. */
   cap: number;
-  /** Taken by buildings, counting levels under construction (troops join in v0.2). */
+  /** Total in use: buildings (incl. levels under construction) plus troops (incl. those in training). */
   used: number;
   free: number;
+  /** The part of `used` taken by troops. */
+  troops: number;
 }
 
 export function population(state: GameState): Population {
   const cap = Math.round(curveValue(FARM_CAPACITY, state.buildings.farm));
   let used = 0;
   for (const b of BUILDINGS) used += buildingPop(b, plannedLevel(state, b));
-  return { cap, used, free: cap - used };
+  let troops = 0;
+  for (const u of UNITS) troops += state.troops[u] * UNIT_DATA[u].pop;
+  for (const batch of state.recruitQueue) troops += (batch.count - batch.trained) * UNIT_DATA[batch.unit].pop;
+  used += troops;
+  return { cap, used, free: cap - used, troops };
 }
 
 /** Total population a building uses at a level. */

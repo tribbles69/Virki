@@ -154,7 +154,8 @@ export class VillageView {
       const row = this.rows[b];
       const info = upgradeInfo(s, b);
       const maxed = info.blocker === 'max-level';
-      row.level.textContent = `Level ${info.level}${info.nextLevel - 1 > info.level ? ` (building ${info.nextLevel - 1})` : ''}`;
+      const building = info.nextLevel - 1 > info.level ? ` (building ${info.nextLevel - 1})` : '';
+      row.level.textContent = info.level === 0 ? `Not built${building}` : `Level ${info.level}${building}`;
       row.effect.textContent = effectLine(s, b, info.nextLevel, maxed);
       row.costs.wood.parentElement!.hidden = maxed;
       for (const r of RESOURCES) {
@@ -168,7 +169,7 @@ export class VillageView {
       row.pop.classList.toggle('short', info.blocker === 'population');
       row.time.textContent = `⏱ ${duration(info.time)}`;
 
-      row.button.textContent = maxed ? 'Max level' : `Upgrade to ${info.nextLevel}`;
+      row.button.textContent = maxed ? 'Max level' : info.nextLevel === 1 ? 'Build' : `Upgrade to ${info.nextLevel}`;
       row.button.disabled = !!info.blocker;
       if (info.blocker === 'resources' && info.wait !== undefined && Number.isFinite(info.wait)) {
         row.note.textContent = `Enough in ${countdown(info.wait)}`;

@@ -2,9 +2,10 @@ import { hashSeed, type RngState } from './rng';
 import type { GameEvent } from './events';
 import { STARTING_RESOURCES, type ResourceId } from './data/resources';
 import { BUILDINGS, BUILDING_DATA, type BuildingId } from './data/buildings';
+import { UNITS, type UnitId } from './data/units';
 
-/** Bump when the save shape changes, and add a migration in the save layer. */
-export const SAVE_VERSION = 1;
+/** Bump when the save shape changes, and add a migration in src/game/migrate.ts. */
+export const SAVE_VERSION = 2;
 
 /** The entire game. Plain JSON-safe data only: it is what gets saved. */
 export interface GameState {
@@ -25,6 +26,10 @@ export interface GameState {
   buildings: Record<BuildingId, number>;
   /** Builds in progress, in the order they'll finish. */
   buildQueue: BuildJob[];
+  /** Soldiers at home. */
+  troops: Record<UnitId, number>;
+  /** Training batches; only the first is in progress. */
+  recruitQueue: RecruitBatch[];
 }
 
 export interface BuildJob {
@@ -39,6 +44,21 @@ export interface BuildJob {
   eventId: number;
 }
 
+export interface RecruitBatch {
+  unit: UnitId;
+  count: number;
+  /** How many have finished training and joined the army. */
+  trained: number;
+  /** Ms to train one, fixed when ordered. */
+  perUnit: number;
+  /** Price of one, for refunds. */
+  paidEach: Record<ResourceId, number>;
+  /** When the soldier in training finishes (first batch only; 0 while waiting). */
+  nextAt: number;
+  /** The queued 'recruit-done' event (first batch only; 0 while waiting). */
+  eventId: number;
+}
+
 export function newGame(seed: string, now: number): GameState {
   return {
     version: SAVE_VERSION,
@@ -50,5 +70,7 @@ export function newGame(seed: string, now: number): GameState {
     resources: { ...STARTING_RESOURCES },
     buildings: Object.fromEntries(BUILDINGS.map((b) => [b, BUILDING_DATA[b].start])) as Record<BuildingId, number>,
     buildQueue: [],
+    troops: Object.fromEntries(UNITS.map((u) => [u, 0])) as Record<UnitId, number>,
+    recruitQueue: [],
   };
 }

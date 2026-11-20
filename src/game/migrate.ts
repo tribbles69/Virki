@@ -1,4 +1,4 @@
-import { BUILDINGS, BUILDING_DATA, RESOURCES, SAVE_VERSION, type GameState } from '../sim';
+import { BUILDINGS, BUILDING_DATA, RESOURCES, SAVE_VERSION, UNITS, type GameState } from '../sim';
 
 /**
  * Upgrades a save from version N to N+1. Add one entry each time SAVE_VERSION
@@ -6,7 +6,8 @@ import { BUILDINGS, BUILDING_DATA, RESOURCES, SAVE_VERSION, type GameState } fro
  */
 type Migration = (save: any) => any;
 export const MIGRATIONS: Record<number, Migration> = {
-  // 1: (s) => ({ ...s, version: 2, newField: ... }),
+  // v0.2: soldiers and the training queue.
+  1: (s) => ({ ...s, version: 2, troops: {}, recruitQueue: [] }),
 };
 
 export class SaveError extends Error {}
@@ -60,6 +61,19 @@ function normalise(s: Record<string, unknown>): GameState {
     if (!isNum(v) || v < 0 || v > BUILDING_DATA[b].max || !Number.isInteger(v)) throw bad(`building ${b}`);
     buildings[b] = v;
   }
+  if (!isObj(s.troops)) throw bad('troops');
+  if (!Array.isArray(s.recruitQueue)) throw bad('training queue');
+  const troops = {} as GameState['troops'];
+  for (const u of UNITS) {
+    const v = s.troops[u] ?? 0;
+    if (!isNum(v) || v < 0 || !Number.isInteger(v)) throw bad(`troops ${u}`);
+    troops[u] = v;
+  }
+  for (const b of s.recruitQueue) {
+    if (!isObj(b) || !(UNITS as readonly unknown[]).includes(b.unit) || !isNum(b.count) || !isNum(b.trained)) {
+      throw bad('training queue');
+    }
+  }
 
   return {
     version: SAVE_VERSION,
@@ -71,5 +85,7 @@ function normalise(s: Record<string, unknown>): GameState {
     resources,
     buildings,
     buildQueue: s.buildQueue as GameState['buildQueue'],
+    troops,
+    recruitQueue: s.recruitQueue as GameState['recruitQueue'],
   };
 }

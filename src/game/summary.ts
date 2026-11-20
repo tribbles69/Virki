@@ -1,4 +1,14 @@
-import { BUILDINGS, BUILDING_DATA, RESOURCES, type BuildingId, type GameState, type ResourceId } from '../sim';
+import {
+  BUILDINGS,
+  BUILDING_DATA,
+  RESOURCES,
+  UNITS,
+  UNIT_DATA,
+  type BuildingId,
+  type GameState,
+  type ResourceId,
+  type UnitId,
+} from '../sim';
 
 /** What happened while the player was away, for a "welcome back" message. */
 export interface CatchUpSummary {
@@ -7,6 +17,8 @@ export interface CatchUpSummary {
   gained: Record<ResourceId, number>;
   /** Buildings that went up, with their new level. */
   upgraded: { building: BuildingId; name: string; level: number }[];
+  /** Soldiers that finished training, e.g. "12 Spearmen". */
+  trained: { unit: UnitId; count: number; label: string }[];
 }
 
 export function summarise(before: GameState, after: GameState): CatchUpSummary {
@@ -17,7 +29,10 @@ export function summarise(before: GameState, after: GameState): CatchUpSummary {
     name: BUILDING_DATA[b].name,
     level: after.buildings[b],
   }));
-  return { awayMs: Math.max(0, after.time - before.time), gained, upgraded };
+  const trained = UNITS.map((u) => ({ unit: u, count: after.troops[u] - before.troops[u] }))
+    .filter((t) => t.count > 0)
+    .map((t) => ({ ...t, label: `${t.count} ${t.count === 1 ? UNIT_DATA[t.unit].name : UNIT_DATA[t.unit].plural}` }));
+  return { awayMs: Math.max(0, after.time - before.time), gained, upgraded, trained };
 }
 
 /** "3 h 20 min", "2 days 4 h", "45 s". */

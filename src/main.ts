@@ -2,14 +2,19 @@ import './style.css';
 import {
   blockerText,
   cancelLastUpgrade,
+  cancelRecruit,
+  recruit,
+  recruitBlockerText,
   startUpgrade,
   upgradeInfo,
   BUILDINGS,
   BUILDING_DATA,
   RESOURCES,
   RESOURCE_NAMES,
+  UNIT_DATA,
   type GameState,
 } from './sim';
+import { BarracksView } from './ui/barracks';
 import { SaveStore } from './game/db';
 import { Game, type StartResult } from './game/game';
 import { exportFileName } from './game/saveFile';
@@ -22,6 +27,10 @@ app.innerHTML = `
   <header class="top">
     <div class="brand"><img src="icon.svg" width="28" height="28" alt="" /><span>VIRKI</span></div>
     <div id="bar"></div>
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="village">Village</button>
+      <button class="tab" role="tab" data-tab="barracks">Barracks</button>
+    </nav>
   </header>
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
   <main id="main"><p class="muted center">Loading your village…</p></main>
@@ -58,6 +67,7 @@ function welcome(s: CatchUpSummary | undefined, source: StartResult['source']): 
   if (s.awayMs < 60_000) return undefined;
   const bits = RESOURCES.filter((r) => s.gained[r] > 0).map((r) => `+${fullNum(s.gained[r])} ${RESOURCE_NAMES[r].toLowerCase()}`);
   for (const u of s.upgraded) bits.push(`${u.name} reached level ${u.level}`);
+  if (s.trained.length) bits.push(`${s.trained.map((t) => t.label).join(' and ')} trained`);
   return `Away for ${formatDuration(s.awayMs)}.${bits.length ? ` ${bits.join(', ')}.` : ''}`;
 }
 
@@ -83,7 +93,50 @@ async function main() {
 
   const mainEl = $('main');
   mainEl.innerHTML = '';
-  const view = new VillageView($('bar'), mainEl, {
+  const villagePane = document.createElement('div');
+  const barracksPane = document.createElement('div');
+  villagePane.className = barracksPane.className = 'stack';
+  mainEl.append(villagePane, barracksPane);
+
+  const panes = { village: villagePane, barracks: barracksPane } as const;
+  type Tab = keyof typeof panes;
+  const showTab = (tab: Tab) => {
+    for (const [name, pane] of Object.entries(panes)) pane.hidden = name !== tab;
+    document.querySelectorAll<HTMLButtonElement>('.tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
+    try {
+      localStorage.setItem('virki-tab', tab);
+    } catch {
+      /* private mode: just don't remember */
+    }
+    window.scrollTo({ top: 0 });
+  };
+  document.querySelectorAll<HTMLButtonElement>('.tab').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab as Tab)));
+  let savedTab: string | null = null;
+  try {
+    savedTab = localStorage.getItem('virki-tab');
+  } catch {
+    /* ignore */
+  }
+  showTab(savedTab === 'barracks' ? 'barracks' : 'village');
+
+  const barracks = new BarracksView(barracksPane, {
+    recruit: async (unit, count) => {
+      const r = await game.act((s) => recruit(s, unit, count));
+      if (!r.ok) toast(recruitBlockerText(game.state, unit, r.reason), 'error', 3_000);
+      return r.ok;
+    },
+    cancel: async (index) => {
+      const batch = game.state.recruitQueue[index];
+      if (!batch) return;
+      const left = batch.count - batch.trained;
+      const name = left === 1 ? UNIT_DATA[batch.unit].name : UNIT_DATA[batch.unit].plural;
+      if (!confirm(`Cancel training ${left} ${name}? You’ll get a full refund for them.`)) return;
+      await game.act((s) => cancelRecruit(s, index));
+    },
+    goToVillage: () => showTab('village'),
+  });
+
+  const view = new VillageView($('bar'), villagePane, {
     upgrade: async (b) => {
       const r = await game.act((s) => startUpgrade(s, b));
       if (!r.ok) toast(blockerText(upgradeInfo(game.state, b)) || 'Can’t build that right now.', 'error', 3_000);
@@ -105,10 +158,20 @@ async function main() {
     for (const b of BUILDINGS) {
       if (s.buildings[b] > last.buildings[b]) toast(`${BUILDING_DATA[b].name} reached level ${s.buildings[b]}.`);
     }
+    // A training batch finished (the queue shrank while soldiers arrived).
+    const prev = last.recruitQueue[0];
+    if (prev && s.recruitQueue.length < last.recruitQueue.length && s.troops[prev.unit] > last.troops[prev.unit]) {
+      toast(`${prev.count} ${prev.count === 1 ? UNIT_DATA[prev.unit].name : UNIT_DATA[prev.unit].plural} ready for battle.`);
+    }
     last = s;
   });
 
-  const frame = () => view.update(game.tick(), Date.now());
+  const frame = () => {
+    const s = game.tick();
+    const now = Date.now();
+    view.update(s, now);
+    barracks.update(s, now);
+  };
   frame();
   setInterval(frame, 500);
   document.addEventListener('visibilitychange', () => {
@@ -136,7 +199,7 @@ async function main() {
     try {
       const summary = await game.importText(await f.text());
       last = game.state;
-      view.update(game.state, Date.now());
+      frame();
       toast(`Save imported. ${welcome(summary, 'save') ?? ''}`.trim());
     } catch (e) {
       toast(e instanceof Error ? e.message : String(e), 'error');

@@ -11,7 +11,7 @@ Work down this list in order. When Aaron says "go", pick up the first unchecked 
 - [x] Placeholder UI: resource bar, building list with upgrade buttons and timers
 
 ## v0.2 — First blood
-- [ ] Barracks + Spearman, Swordsman, Axeman; recruitment queue
+- [x] Barracks + Spearman, Swordsman, Axeman; recruitment queue
 - [ ] 15×15 map with 8 bandit camps
 - [ ] Marches with travel time, TW-style battle resolution, loot carry
 - [ ] Battle reports
