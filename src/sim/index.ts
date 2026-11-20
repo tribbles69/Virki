@@ -2,4 +2,8 @@ export * from './rng';
 export * from './state';
 export * from './events';
 export * from './advance';
+export * from './curve';
+export * from './economy';
+export * from './data/resources';
+export * from './data/buildings';
 export { defaultRules } from './rules';

@@ -1,5 +1,7 @@
 import { hashSeed, type RngState } from './rng';
 import type { GameEvent } from './events';
+import { STARTING_RESOURCES, type ResourceId } from './data/resources';
+import { STARTING_LEVELS, type BuildingId } from './data/buildings';
 
 /** Bump when the save shape changes, and add a migration in the save layer. */
 export const SAVE_VERSION = 1;
@@ -17,6 +19,10 @@ export interface GameState {
   nextEventId: number;
   /** Pending events, kept sorted by (at, id). */
   events: GameEvent[];
+  /** Stockpile. Fractional internally so slow trickles aren't lost; show floor(). */
+  resources: Record<ResourceId, number>;
+  /** Current level of each building (0 = not built). */
+  buildings: Record<BuildingId, number>;
 }
 
 export function newGame(seed: string, now: number): GameState {
@@ -27,5 +33,7 @@ export function newGame(seed: string, now: number): GameState {
     rng: hashSeed(seed),
     nextEventId: 1,
     events: [],
+    resources: { ...STARTING_RESOURCES },
+    buildings: { ...STARTING_LEVELS },
   };
 }
