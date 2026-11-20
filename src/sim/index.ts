@@ -7,3 +7,4 @@ export * from './economy';
 export * from './data/resources';
 export * from './data/buildings';
 export { defaultRules } from './rules';
+export * from './build';

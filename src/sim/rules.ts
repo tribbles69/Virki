@@ -1,5 +1,6 @@
 import type { Rules } from './advance';
 import { production } from './economy';
+import { BUILD_COMPLETE, onBuildComplete } from './build';
 
 /**
  * The live game's rules. Features add their continuous systems (production)
@@ -7,5 +8,7 @@ import { production } from './economy';
  */
 export const defaultRules: Rules = {
   systems: [production],
-  handlers: {},
+  handlers: {
+    [BUILD_COMPLETE]: onBuildComplete,
+  },
 };

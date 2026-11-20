@@ -11,3 +11,4 @@ Time and randomness are passed in. `test/sim-purity.test.ts` enforces this. See 
 - `curve.ts`: segmented growth curves (DESIGN §5.2) used by every balance table.
 - `economy.ts`: production per hour, Warehouse cap, population (Farm cap vs buildings), `canAfford`, `timeUntilAffordable`, and the `production` system.
 - `data/`: balance tables (resources, buildings). Tune numbers here, not in the logic.
+- `build.ts`: building costs and times, `upgradeInfo` (cost, time, population, and why it is blocked), `startUpgrade`, `cancelLastUpgrade`, and the `build-complete` event handler. Commands are pure: advance to now first, then apply.

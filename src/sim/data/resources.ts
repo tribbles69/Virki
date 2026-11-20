@@ -41,8 +41,8 @@ export const WAREHOUSE_CAPACITY: Curve = {
   atZero: 1_000,
   segments: [
     { upTo: 30, r: 1.229 }, // L30 ≈ 400,000
-    { upTo: 60, r: 1.06 },
-    { upTo: 100, r: 1.03 },
+    { upTo: 60, r: 1.1 }, // after L30, grows as fast as building costs so every level stays affordable
+    { upTo: 100, r: 1.06 },
   ],
 };
 

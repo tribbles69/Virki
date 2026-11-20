@@ -1,5 +1,5 @@
 import { curveValue } from './curve';
-import { BUILDINGS, POP_PER_BUILDING } from './data/buildings';
+import { BUILDINGS, BUILDING_DATA, type BuildingId } from './data/buildings';
 import { FARM_CAPACITY, PRODUCERS, RESOURCES, WAREHOUSE_CAPACITY, type ResourceId } from './data/resources';
 import type { GameState } from './state';
 import type { System } from './advance';
@@ -20,7 +20,7 @@ export function storageCap(state: GameState): number {
 export interface Population {
   /** Farm capacity. */
   cap: number;
-  /** Taken by buildings (troops join in v0.2). */
+  /** Taken by buildings, counting levels under construction (troops join in v0.2). */
   used: number;
   free: number;
 }
@@ -28,8 +28,20 @@ export interface Population {
 export function population(state: GameState): Population {
   const cap = Math.round(curveValue(FARM_CAPACITY, state.buildings.farm));
   let used = 0;
-  for (const b of BUILDINGS) used += Math.round(curveValue(POP_PER_BUILDING[b], state.buildings[b]));
+  for (const b of BUILDINGS) used += buildingPop(b, plannedLevel(state, b));
   return { cap, used, free: cap - used };
+}
+
+/** Total population a building uses at a level. */
+export function buildingPop(building: BuildingId, level: number): number {
+  return Math.round(curveValue(BUILDING_DATA[building].pop, level));
+}
+
+/** Level a building will reach once everything queued for it finishes. */
+export function plannedLevel(state: GameState, building: BuildingId): number {
+  let level = state.buildings[building];
+  for (const job of state.buildQueue) if (job.building === building) level = Math.max(level, job.toLevel);
+  return level;
 }
 
 /** True if the stockpile covers a cost. */
