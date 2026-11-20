@@ -3,7 +3,7 @@
 Work down this list in order. When Aaron says "go", pick up the first unchecked item, build it on a branch and open a PR. Design reference: [DESIGN.md](DESIGN.md).
 
 ## v0.1 — The village ticks
-- [ ] Project scaffold: Vite + TypeScript, PWA manifest + service worker, GitHub Pages deploy
+- [x] Project scaffold: Vite + TypeScript, PWA manifest + service worker, GitHub Pages deploy
 - [ ] Pure sim core: `advance(state, now)`, event queue, seeded RNG
 - [ ] Resources: Wood, Stone, Ore (Copper), Population; production and warehouse cap
 - [ ] Buildings: Great Hall, Woodcutter, Quarry, Farm, Mine, Warehouse; build queue (1 slot)
