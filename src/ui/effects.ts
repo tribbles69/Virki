@@ -1,0 +1,49 @@
+import {
+  curveValue,
+  population,
+  productionPerHour,
+  storageCap,
+  HALL_SPEED,
+  PRODUCERS,
+  RESOURCES,
+  RESOURCE_NAMES,
+  type BuildingId,
+  type GameState,
+} from '../sim';
+import { fullNum } from './format';
+
+const withLevel = (s: GameState, b: BuildingId, level: number): GameState => ({
+  ...s,
+  buildings: { ...s.buildings, [b]: level },
+});
+
+/**
+ * One line saying what the next upgrade brings, compared with the level before
+ * it (which is the level under construction, if one is).
+ */
+export function effectLine(state: GameState, b: BuildingId, nextLevel: number, maxed: boolean): string {
+  const s = maxed ? state : withLevel(state, b, nextLevel - 1);
+  const next = withLevel(state, b, nextLevel);
+  const arrow = (now: string, then: string) => (maxed ? now : `${now} → ${then}`);
+
+  const produced = RESOURCES.find((r) => PRODUCERS[r].building === b);
+  if (produced) {
+    const name = RESOURCE_NAMES[produced].toLowerCase();
+    return `${arrow(fullNum(productionPerHour(s, produced)), fullNum(productionPerHour(next, produced)))} ${name}/h`;
+  }
+  switch (b) {
+    case 'warehouse':
+      return `Stores ${arrow(fullNum(storageCap(s)), fullNum(storageCap(next)))} of each`;
+    case 'farm':
+      return `Feeds ${arrow(fullNum(population(s).cap), fullNum(population(next).cap))} people`;
+    case 'hall': {
+      const now = curveValue(HALL_SPEED, s.buildings.hall);
+      const then = curveValue(HALL_SPEED, nextLevel);
+      return maxed
+        ? `Builds ${(1 / now).toFixed(1)}× faster`
+        : `Builds ${Math.max(1, Math.round((now / then - 1) * 100))}% faster next level`;
+    }
+    default:
+      return '';
+  }
+}
