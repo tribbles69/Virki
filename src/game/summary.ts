@@ -19,6 +19,13 @@ export interface CatchUpSummary {
   upgraded: { building: BuildingId; name: string; level: number }[];
   /** Soldiers that finished training, e.g. "12 Spearmen". */
   trained: { unit: UnitId; count: number; label: string }[];
+  /** Battles fought while away. */
+  battles: { won: number; lost: number };
+}
+
+/** Soldiers still to be trained, per unit. */
+function inTraining(s: GameState, u: UnitId): number {
+  return s.recruitQueue.filter((b) => b.unit === u).reduce((n, b) => n + b.count - b.trained, 0);
 }
 
 export function summarise(before: GameState, after: GameState): CatchUpSummary {
@@ -29,10 +36,14 @@ export function summarise(before: GameState, after: GameState): CatchUpSummary {
     name: BUILDING_DATA[b].name,
     level: after.buildings[b],
   }));
-  const trained = UNITS.map((u) => ({ unit: u, count: after.troops[u] - before.troops[u] }))
+  // Counted from the training queue, not troops at home, so armies coming back don't look "trained".
+  const trained = UNITS.map((u) => ({ unit: u, count: inTraining(before, u) - inTraining(after, u) }))
     .filter((t) => t.count > 0)
     .map((t) => ({ ...t, label: `${t.count} ${t.count === 1 ? UNIT_DATA[t.unit].name : UNIT_DATA[t.unit].plural}` }));
-  return { awayMs: Math.max(0, after.time - before.time), gained, upgraded, trained };
+  const seen = new Set(before.reports.map((r) => r.id));
+  const fresh = after.reports.filter((r) => !seen.has(r.id));
+  const battles = { won: fresh.filter((r) => r.won).length, lost: fresh.filter((r) => !r.won).length };
+  return { awayMs: Math.max(0, after.time - before.time), gained, upgraded, trained, battles };
 }
 
 /** "3 h 20 min", "2 days 4 h", "45 s". */

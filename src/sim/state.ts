@@ -4,9 +4,10 @@ import { STARTING_RESOURCES, type ResourceId } from './data/resources';
 import { BUILDINGS, BUILDING_DATA, type BuildingId } from './data/buildings';
 import { UNITS, type UnitId } from './data/units';
 import { generateMap, type WorldMap } from './map';
+import type { BattleReport, March } from './march';
 
 /** Bump when the save shape changes, and add a migration in src/game/migrate.ts. */
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 /** The entire game. Plain JSON-safe data only: it is what gets saved. */
 export interface GameState {
@@ -33,6 +34,10 @@ export interface GameState {
   recruitQueue: RecruitBatch[];
   /** The 15×15 map and its bandit camps. */
   map: WorldMap;
+  /** Armies out on the map (going or coming back). */
+  marches: March[];
+  /** Battle results, newest first. */
+  reports: BattleReport[];
 }
 
 export interface BuildJob {
@@ -76,5 +81,7 @@ export function newGame(seed: string, now: number): GameState {
     troops: Object.fromEntries(UNITS.map((u) => [u, 0])) as Record<UnitId, number>,
     recruitQueue: [],
     map: generateMap(seed),
+    marches: [],
+    reports: [],
   };
 }
