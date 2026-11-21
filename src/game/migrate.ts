@@ -15,6 +15,7 @@ import {
   noMetals,
   newEquipment,
   newVeterancy,
+  newLord,
   METALS,
   type GameState,
 } from '../sim';
@@ -45,6 +46,8 @@ export const MIGRATIONS: Record<number, Migration> = {
   9: (s) => ({ ...s, version: 10, equipment: {} }),
   // v0.4: veterancy pools.
   10: (s) => ({ ...s, version: 11, veterancy: {} }),
+  // v0.5: the Lord.
+  11: (s) => ({ ...s, version: 12, lord: newLord(String(s.seed)) }),
 };
 
 export class SaveError extends Error {}
@@ -178,6 +181,8 @@ function normalise(s: Record<string, unknown>): GameState {
     if (!isNum(v) || v < 0) throw bad(`veterancy ${u}`);
     veterancy[u] = v;
   }
+  const lord = s.lord;
+  if (!isObj(lord) || typeof lord.name !== 'string' || !isNum(lord.xp) || lord.xp < 0) throw bad('lord');
   if (!Array.isArray(s.raids)) throw bad('raids');
   for (const r of s.raids) if (!isObj(r) || !isNum(r.id) || !isNum(r.arriveAt) || !isObj(r.troops)) throw bad('raids');
   if (!Array.isArray(s.reports)) throw bad('reports');
@@ -210,5 +215,6 @@ function normalise(s: Record<string, unknown>): GameState {
     smeltQueue: s.smeltQueue as GameState['smeltQueue'],
     equipment,
     veterancy,
+    lord: { name: lord.name, xp: lord.xp },
   };
 }

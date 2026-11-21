@@ -169,6 +169,7 @@ describe('building', () => {
       'Barracks',
       'Stable',
       'Smithy',
+      "Lord's Keep",
       'Wall',
       'Watchtower',
     ]);

@@ -29,7 +29,7 @@ Work down this list in order. When Aaron says "go", pick up the first unchecked 
 - [x] Veterancy
 
 ## v0.5 — The Lord
-- [ ] Lord's Keep, Lord unit, XP, levels, titles
+- [x] Lord's Keep, Lord unit, XP, levels, titles
 - [ ] Skill tree (Raider / Warden / Steward)
 - [ ] Wounds and recovery
 - [ ] Relic drops, relic slots, relic effects

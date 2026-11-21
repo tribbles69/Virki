@@ -3,6 +3,8 @@ import {
   campIntel,
   isScoutingParty,
   campThreat,
+  hasLord,
+  lordStatus,
   playerGear,
   carryCapacity,
   isWarlord,
@@ -47,7 +49,7 @@ const groupLabel = (t: Troops) =>
 type Selection = { kind: 'village' } | { kind: 'camp'; id: number } | { kind: 'tile'; x: number; y: number };
 
 export interface MapHandlers {
-  attack(campId: number, troops: Partial<Troops>): Promise<boolean>;
+  attack(campId: number, troops: Partial<Troops>, withLord: boolean): Promise<boolean>;
   recall(marchId: number): void;
 }
 
@@ -66,6 +68,8 @@ export class MapView {
   private last?: GameState;
   /** What the player has typed in the attack form, kept across redraws. */
   private draft: Partial<Record<UnitId, string>> = {};
+  private draftLord = false;
+  private lordBox?: HTMLInputElement;
   private formSummary?: HTMLElement;
   private formNote?: HTMLElement;
   private sendBtn?: HTMLButtonElement;
@@ -175,11 +179,11 @@ export class MapView {
       const camp = s.map.camps.find((c) => c.id === m.campId);
       const where = camp?.name ?? 'a camp';
       if (m.phase === 'outbound') {
-        r.title.textContent = `⚔️ ${groupLabel(m.troops)} → ${where}`;
+        r.title.textContent = `⚔️ ${m.lord ? '👑 ' : ''}${groupLabel(m.troops)} → ${where}`;
         r.time.textContent = `arrive ${countdown(m.arriveAt - now)} · ${clockTime(m.arriveAt, now)}`;
       } else {
         const loot = RESOURCES.filter((k) => m.loot[k] > 0).map((k) => `${RES_ICON[k]} ${shortNum(m.loot[k])}`).join(' ');
-        r.title.textContent = `↩️ ${groupLabel(m.troops)} from ${where}${m.recalled ? ' (recalled)' : ''}${loot ? ` · ${loot}` : ''}`;
+        r.title.textContent = `↩️ ${m.lord ? '👑 ' : ''}${groupLabel(m.troops) || 'Your Lord, alone,'} from ${where}${m.recalled ? ' (recalled)' : ''}${loot ? ` · ${loot}` : ''}`;
         r.time.textContent = `home ${countdown(m.returnAt - now)} · ${clockTime(m.returnAt, now)}`;
       }
     });
@@ -221,7 +225,7 @@ export class MapView {
     const camp = sel.kind === 'camp' ? s.map.camps.find((c) => c.id === sel.id) : undefined;
     const intel = camp ? campIntel(s, camp.id) : undefined;
     // Minute granularity for the "scouted N min ago" line.
-    const sig = JSON.stringify([sel, s.troops, camp ?? null, intel ?? null, Math.floor(s.time / 60_000)]);
+    const sig = JSON.stringify([sel, s.troops, camp ?? null, intel ?? null, Math.floor(s.time / 60_000), s.buildings.keep, s.marches.some((m) => m.lord)]);
     if (sig === this.detailSig) return;
     this.detailSig = sig;
     const d = this.detail;
@@ -315,13 +319,31 @@ export class MapView {
       row.append(label, input, all);
       form.append(row);
     }
+    if (hasLord(s)) {
+      const st = lordStatus(s);
+      const label = el('label', 'lord-toggle');
+      const box = el('input');
+      box.type = 'checkbox';
+      box.checked = this.draftLord && !st.away;
+      box.disabled = st.away;
+      box.addEventListener('change', () => {
+        this.draftLord = box.checked;
+        this.refreshForm(camp);
+      });
+      this.lordBox = box;
+      label.append(box, ` 👑 ${st.title} ${st.name} leads (+${Math.round(st.bonus * 100)}% attack)${st.away ? ' · away' : ''}`);
+      form.append(label);
+    } else {
+      this.lordBox = undefined;
+    }
     this.formSummary = el('p', 'b-note');
     this.formNote = el('p', 'b-note error');
     this.sendBtn = el('button', 'upgrade send', 'Send attack');
     this.sendBtn.addEventListener('click', async () => {
       const troops = this.draftTroops();
-      if (await this.handlers.attack(camp.id, troops)) {
+      if (await this.handlers.attack(camp.id, troops, !!this.lordBox?.checked)) {
         this.draft = {};
+        this.draftLord = false;
         this.detailSig = '';
         if (this.last) this.drawDetail(this.last);
       }
@@ -344,7 +366,7 @@ export class MapView {
     if (!this.last || !this.formSummary || !this.formNote || !this.sendBtn) return;
     const troops = this.draftTroops();
     const n = troopCount(troops);
-    const blocker = attackBlocker(this.last, camp.id, troops);
+    const blocker = attackBlocker(this.last, camp.id, troops, !!this.lordBox?.checked);
     const scouting = isScoutingParty(troops);
     if (n > 0 && Number.isFinite(n)) {
       const t = travelTime(troops, distanceFromVillage(camp));

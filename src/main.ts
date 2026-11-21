@@ -39,6 +39,7 @@ import {
 import { clockTime } from './ui/format';
 import { BarracksView } from './ui/barracks';
 import { SmithyView } from './ui/smithyview';
+import { LordView } from './ui/lordview';
 import { ForgeView } from './ui/forgeview';
 import { MapView } from './ui/mapview';
 import { ReportsView } from './ui/reports';
@@ -166,8 +167,8 @@ async function main() {
   }
   showTab(savedTab && savedTab in panes ? (savedTab as Tab) : 'village');
   const mapView = new MapView(mapPane, {
-    attack: async (campId, troops) => {
-      const r = await game.act((s) => sendAttack(s, campId, troops));
+    attack: async (campId, troops, withLord) => {
+      const r = await game.act((s) => sendAttack(s, campId, troops, withLord));
       if (!r.ok) {
         toast(ATTACK_BLOCKER_TEXT[r.reason], 'error', 3_000);
         return false;
@@ -215,6 +216,7 @@ async function main() {
     },
     goToVillage: () => showTab('village'),
   });
+  const lordView = new LordView(barracksPane);
   const smithyView = new SmithyView(barracksPane, {
     research: async (unit, track) => {
       const r = await game.act((s) => startResearch(s, unit, track));
@@ -327,6 +329,7 @@ async function main() {
     view.update(s, now);
     barracks.update(s, now);
     smithyView.update(s, now);
+    lordView.update(s, now);
     forgeView.update(s, now);
     mapView.update(s, now);
     reportsView.update(s, now);

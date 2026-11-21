@@ -11,9 +11,10 @@ import { noMetals, type SmeltBatch } from './metals';
 import type { MetalId } from './data/resources';
 import { newEquipment, type Equipment } from './equip';
 import { newVeterancy, type Veterancy } from './veterancy';
+import { newLord, type Lord } from './lord';
 
 /** Bump when the save shape changes, and add a migration in src/game/migrate.ts. */
-export const SAVE_VERSION = 11;
+export const SAVE_VERSION = 12;
 
 /** The entire game. Plain JSON-safe data only: it is what gets saved. */
 export interface GameState {
@@ -68,6 +69,8 @@ export interface GameState {
   equipment: Equipment;
   /** Experience pool per unit type (veterancy). */
   veterancy: Veterancy;
+  /** Your Lord (arrives with the Lord's Keep). */
+  lord: Lord;
 }
 
 export interface BuildJob {
@@ -127,5 +130,6 @@ export function newGame(seed: string, now: number): GameState {
     smeltQueue: [],
     equipment: newEquipment(),
     veterancy: newVeterancy(),
+    lord: newLord(seed),
   };
 }

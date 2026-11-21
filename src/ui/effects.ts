@@ -75,6 +75,9 @@ export function effectLine(state: GameState, b: BuildingId, nextLevel: number, m
         ? `Trains cavalry ${(1 / now).toFixed(1)}× faster`
         : `Trains cavalry ${Math.max(1, Math.round((now / then - 1) * 100))}% faster next level`;
     }
+    case 'keep':
+      if (nextLevel === 1) return 'A Lord arrives to lead your armies and guard the village';
+      return maxed ? `Your Lord can reach level ${s.buildings.keep}` : `Lord’s level cap ${s.buildings.keep} → ${nextLevel}`;
     case 'smithy': {
       if (nextLevel === 1) return 'Researches better weapons and armour for every unit';
       const best = (lvl: number) => [...CRAFT_TIERS].reverse().find((t) => t.smithy <= lvl)?.name ?? 'Rags';

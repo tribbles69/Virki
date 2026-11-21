@@ -148,8 +148,9 @@ export class ReportsView {
     return d;
   }
 
-  /** Veterancy rank changes from this battle. */
+  /** Veterancy rank changes and Lord level-ups from this battle. */
   private promotions(d: HTMLElement, r: BattleReport) {
+    if (r.lord) d.append(el('p', 'muted small', r.kind === 'raid' ? '👑 Your Lord helped defend the village.' : '👑 Your Lord led this army.'));
     for (const line of r.promotions ?? []) d.append(el('p', 'promotion', `⭐ ${line}`));
   }
 
