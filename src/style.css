@@ -263,3 +263,11 @@ p.b-note { margin: 6px 0 0; }
 .smithy-unit > .b-note { margin: 2px 0 6px; font-size: 0.8rem; }
 .smithy-unit > .b-note:empty { display: none; }
 .gear-line { margin: 0 0 6px; font-size: 0.8rem; color: var(--accent); }
+
+/* Veterancy */
+.rank-line { margin: 0 0 2px; font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+.rank-line[data-rank="1"] { color: #c9b98f; }
+.rank-line[data-rank="2"] { color: #a8d06a; }
+.rank-line[data-rank="3"] { color: #7fc4e8; }
+.rank-line[data-rank="4"] { color: #e8b04a; }
+.promotion { margin: 6px 0 0; font-weight: 600; color: var(--accent); font-size: 0.88rem; }

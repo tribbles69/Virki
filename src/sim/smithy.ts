@@ -15,6 +15,7 @@ import {
 import { UNITS, UNIT_DATA, type UnitId } from './data/units';
 import { canAfford, storageCap, timeUntilAffordable } from './economy';
 import { metalMult } from './equip';
+import { vetMult } from './veterancy';
 import { cancel, schedule } from './events';
 import type { EventHandler } from './advance';
 import type { Gear } from './battle';
@@ -41,14 +42,14 @@ export const newSmithy = (): SmithyState =>
 export const craftName = (tier: number) => CRAFT_TIERS[Math.max(0, Math.min(MAX_CRAFT_TIER, tier))].name;
 export const craftMult = (tier: number) => CRAFT_TIERS[Math.max(0, Math.min(MAX_CRAFT_TIER, tier))].mult;
 
-/** The player's gear multipliers for battle: craft tier × metal (weapons → attack, armour → defence). */
+/** The player's multipliers for battle: craft tier × metal × veterancy (weapons → attack, armour → defence). */
 export function playerGear(state: GameState): Gear {
   const gear: Gear = {};
   for (const u of UNITS) {
     const eq = state.equipment[u];
     gear[u] = {
-      attack: craftMult(state.smithy[u].weapon) * metalMult(eq.weapon),
-      defence: craftMult(state.smithy[u].armour) * metalMult(eq.armour),
+      attack: craftMult(state.smithy[u].weapon) * metalMult(eq.weapon) * vetMult(state, u),
+      defence: craftMult(state.smithy[u].armour) * metalMult(eq.armour) * vetMult(state, u),
     };
   }
   return gear;

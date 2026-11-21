@@ -9,6 +9,10 @@ import {
   METAL_DATA,
   craftName,
   playerGear,
+  averageXp,
+  soldiersOwned,
+  unitRank,
+  VET_RANKS,
   RESOURCES,
   RESOURCE_NAMES,
   UNITS,
@@ -55,6 +59,7 @@ export class BarracksView {
     note: HTMLElement;
     card: HTMLElement;
     gear: HTMLElement;
+    rank: HTMLElement;
   }>;
 
   constructor(root: HTMLElement, private handlers: BarracksHandlers) {
@@ -144,9 +149,10 @@ export class BarracksView {
       const total = el('p', 'b-note');
       const note = el('p', 'b-note');
       const gear = el('p', 'gear-line');
-      card.append(head, role, gear, stats, costs, form, total, note);
+      const rank = el('p', 'rank-line');
+      card.append(head, role, rank, gear, stats, costs, form, total, note);
       list.append(card);
-      this.cards[u] = { owned, each, time, input, maxBtn, train, total, note, card, gear };
+      this.cards[u] = { owned, each, time, input, maxBtn, train, total, note, card, gear, rank };
       input.addEventListener('input', () => this.last && this.updateCard(this.last, u));
     }
     this.body.append(list);
@@ -238,6 +244,10 @@ export class BarracksView {
     const tier = s.smithy[u];
     const eq = s.equipment[u];
     const g = playerGear(s)[u] ?? { attack: 1, defence: 1 };
+    const rank = unitRank(s, u);
+    const avg = averageXp(s, u);
+    c.rank.textContent = `${rank.name}${rank.bonus > 0 ? ` · +${Math.round(rank.bonus * 100)}%` : ''}${soldiersOwned(s, u) > 0 ? ` · ${avg.toFixed(1)} avg xp` : ''}${rank.next !== undefined ? ` · ${VET_RANKS[rank.index + 1].name} at ${rank.next}` : ''}`;
+    c.rank.dataset.rank = String(rank.index);
     c.gear.textContent = `${craftName(tier.weapon)} ${METAL_DATA[eq.weapon].name} weapons · ${craftName(tier.armour)} ${METAL_DATA[eq.armour].name} armour · ⚔️ ×${g.attack.toFixed(2)} 🛡️ ×${g.defence.toFixed(2)}`;
     c.owned.textContent = info.inTraining ? `${fullNum(info.owned)} (+${info.inTraining})` : fullNum(info.owned);
     for (const r of RESOURCES) c.each[r].textContent = `${RES_ICON[r]} ${def.cost[r]}`;

@@ -33,6 +33,8 @@ export interface CatchUpSummary {
   researched: string[];
   /** Ingots that came out of the forge while away, e.g. "20 Copper". */
   smelted: string[];
+  /** Veterancy rank changes from battles while away, e.g. "Axemen are now Veterans". */
+  promotions: string[];
 }
 
 /** Soldiers still to be trained, per unit. */
@@ -76,6 +78,8 @@ export function summarise(before: GameState, after: GameState): CatchUpSummary {
     resets,
     researched,
     smelted,
+    // Oldest first, so a later change for the same unit wins when read in order.
+    promotions: [...fresh].reverse().flatMap((r) => r.promotions ?? []),
     ...(warlord ? { warlord } : {}),
   };
 }

@@ -4,6 +4,7 @@ import { RESOURCES, type ResourceId } from './data/resources';
 import { UNITS } from './data/units';
 import { cancel, schedule } from './events';
 import { distanceFromVillage, travelTime } from './map';
+import { promotionNote, recordBattle } from './veterancy';
 import type { EventHandler } from './advance';
 import type { GameState } from './state';
 
@@ -58,6 +59,8 @@ export interface BattleReport {
   loot: Record<ResourceId, number>;
   /** Most the survivors could have carried. */
   capacity: number;
+  /** Veterancy rank changes from this battle, e.g. "Axemen are now Veterans". */
+  promotions?: string[];
   /** Your attack after luck, and the bandits' defence (missing on reports from before v0.2.4). */
   attackStrength?: number;
   defenceStrength?: number;
@@ -203,6 +206,8 @@ export const onMarchArrive: EventHandler = (state, event, ctx) => {
   const defenders = { ...camp.troops };
   const result = fight(march.troops, defenders, ctx.rng, {}, { attacker: playerGear(state) });
   camp.troops = result.defenderSurvivors;
+  // Experience: survivors learn (more from a close fight), the dead take their share away.
+  const promoted = recordBattle(state, march.troops, result.attackerLosses, result.attackerWon, result.defenceStrength / Math.max(1, result.attackStrength));
   march.troops = result.attackerSurvivors;
 
   let loot = noLoot();
@@ -227,6 +232,7 @@ export const onMarchArrive: EventHandler = (state, event, ctx) => {
     defendersLost: result.defenderLosses,
     loot,
     capacity,
+    ...promotionNote(promoted),
     attackStrength: Math.round(result.attackStrength),
     defenceStrength: Math.round(result.defenceStrength),
     read: false,
@@ -261,6 +267,11 @@ export function troopsAway(state: GameState): Troops {
 
 /** Plain-English one-liner for a battle (used by toasts until the reports screen lands). */
 export function reportHeadline(r: BattleReport): string {
+  const extra = r.promotions?.length ? ` ${r.promotions.join('. ')}!` : '';
+  return baseHeadline(r) + extra;
+}
+
+function baseHeadline(r: BattleReport): string {
   const lootTotal = RESOURCES.reduce((n, k) => n + r.loot[k], 0);
   if (r.kind === 'scout') {
     const seen = RESOURCES.reduce((n, k) => n + (r.seenLoot?.[k] ?? 0), 0);

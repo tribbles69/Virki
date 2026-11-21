@@ -133,6 +133,7 @@ export class ReportsView {
       loot.append(el('span', 'muted', 'No loot: nobody survived to carry it.'));
     }
     d.append(loot);
+    this.promotions(d, r);
 
     const actions = el('div', 'report-actions');
     const again = el('button', 'upgrade small-btn', 'Attack again');
@@ -145,6 +146,11 @@ export class ReportsView {
     actions.append(again, del);
     d.append(actions);
     return d;
+  }
+
+  /** Veterancy rank changes from this battle. */
+  private promotions(d: HTMLElement, r: BattleReport) {
+    for (const line of r.promotions ?? []) d.append(el('p', 'promotion', `⭐ ${line}`));
   }
 
   /** What your scouts saw. */
@@ -202,6 +208,7 @@ export class ReportsView {
       if (stolen === 0) loot.append(el('span', 'muted', '(your stores were empty)'));
     }
     d.append(loot);
+    this.promotions(d, r);
     const actions = el('div', 'report-actions');
     if (r.campTier <= 8) {
       const back = el('button', 'upgrade small-btn', 'Strike back');

@@ -10,9 +10,10 @@ import { newSmithy, type ResearchJob, type SmithyState } from './smithy';
 import { noMetals, type SmeltBatch } from './metals';
 import type { MetalId } from './data/resources';
 import { newEquipment, type Equipment } from './equip';
+import { newVeterancy, type Veterancy } from './veterancy';
 
 /** Bump when the save shape changes, and add a migration in src/game/migrate.ts. */
-export const SAVE_VERSION = 10;
+export const SAVE_VERSION = 11;
 
 /** The entire game. Plain JSON-safe data only: it is what gets saved. */
 export interface GameState {
@@ -65,6 +66,8 @@ export interface GameState {
   smeltQueue: SmeltBatch[];
   /** Metal of each unit type's weapons and armour. */
   equipment: Equipment;
+  /** Experience pool per unit type (veterancy). */
+  veterancy: Veterancy;
 }
 
 export interface BuildJob {
@@ -123,5 +126,6 @@ export function newGame(seed: string, now: number): GameState {
     ingots: noMetals(),
     smeltQueue: [],
     equipment: newEquipment(),
+    veterancy: newVeterancy(),
   };
 }
