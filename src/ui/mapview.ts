@@ -88,6 +88,14 @@ export class MapView {
     root.append(this.moving, card, this.detail);
   }
 
+  /** Select a camp (e.g. "Attack again" from a report) and bring its card into view. */
+  selectCamp(id: number) {
+    const camp = this.last?.map.camps.find((c) => c.id === id);
+    if (!camp) return;
+    this.select(camp.x, camp.y);
+    requestAnimationFrame(() => this.detail.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }
+
   private select(x: number, y: number) {
     if (!this.last) return;
     const camp = this.last.map.camps.find((c) => c.x === x && c.y === y);

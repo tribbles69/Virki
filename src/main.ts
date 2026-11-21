@@ -16,11 +16,16 @@ import {
   recallMarch,
   reportHeadline,
   sendAttack,
+  deleteReport,
+  markAllReportsRead,
+  markReportRead,
+  unreadReports,
   type GameState,
 } from './sim';
 import { clockTime } from './ui/format';
 import { BarracksView } from './ui/barracks';
 import { MapView } from './ui/mapview';
+import { ReportsView } from './ui/reports';
 import { SaveStore } from './game/db';
 import { Game, type StartResult } from './game/game';
 import { exportFileName } from './game/saveFile';
@@ -37,6 +42,7 @@ app.innerHTML = `
       <button class="tab" role="tab" data-tab="village">Village</button>
       <button class="tab" role="tab" data-tab="barracks">Barracks</button>
       <button class="tab" role="tab" data-tab="map">Map</button>
+      <button class="tab" role="tab" data-tab="reports">Reports<span class="badge" id="unread" hidden></span></button>
     </nav>
   </header>
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
@@ -105,10 +111,11 @@ async function main() {
   const villagePane = document.createElement('div');
   const barracksPane = document.createElement('div');
   const mapPane = document.createElement('div');
-  villagePane.className = barracksPane.className = mapPane.className = 'stack';
-  mainEl.append(villagePane, barracksPane, mapPane);
+  const reportsPane = document.createElement('div');
+  villagePane.className = barracksPane.className = mapPane.className = reportsPane.className = 'stack';
+  mainEl.append(villagePane, barracksPane, mapPane, reportsPane);
 
-  const panes = { village: villagePane, barracks: barracksPane, map: mapPane } as const;
+  const panes = { village: villagePane, barracks: barracksPane, map: mapPane, reports: reportsPane } as const;
   type Tab = keyof typeof panes;
   const showTab = (tab: Tab) => {
     for (const [name, pane] of Object.entries(panes)) pane.hidden = name !== tab;
@@ -145,6 +152,20 @@ async function main() {
       if (!m) return;
       if (!confirm('Call this army back? It will turn round and walk home.')) return;
       await game.act((s) => recallMarch(s, marchId));
+    },
+  });
+
+  const unreadBadge = $('unread');
+  const reportsView = new ReportsView(reportsPane, {
+    open: (id) => void game.act((s) => ({ ok: true, state: markReportRead(s, id) })),
+    markAllRead: () => void game.act((s) => ({ ok: true, state: markAllReportsRead(s) })),
+    remove: async (id) => {
+      if (!confirm('Delete this report?')) return;
+      await game.act((s) => ({ ok: true, state: deleteReport(s, id) }));
+    },
+    attackAgain: (campId) => {
+      showTab('map');
+      mapView.selectCamp(campId);
     },
   });
 
@@ -211,6 +232,10 @@ async function main() {
     view.update(s, now);
     barracks.update(s, now);
     mapView.update(s, now);
+    reportsView.update(s, now);
+    const unread = unreadReports(s);
+    unreadBadge.hidden = unread === 0;
+    unreadBadge.textContent = unread > 99 ? '99+' : String(unread);
   };
   frame();
   setInterval(frame, 500);

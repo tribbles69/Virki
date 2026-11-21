@@ -46,6 +46,9 @@ export interface BattleReport {
   loot: Record<ResourceId, number>;
   /** Most the survivors could have carried. */
   capacity: number;
+  /** Your attack after luck, and the bandits' defence (missing on reports from before v0.2.4). */
+  attackStrength?: number;
+  defenceStrength?: number;
   read: boolean;
 }
 
@@ -156,6 +159,8 @@ export const onMarchArrive: EventHandler = (state, event, ctx) => {
     defendersLost: result.defenderLosses,
     loot,
     capacity,
+    attackStrength: Math.round(result.attackStrength),
+    defenceStrength: Math.round(result.defenceStrength),
     read: false,
   });
   if (state.reports.length > MAX_REPORTS) state.reports.length = MAX_REPORTS;

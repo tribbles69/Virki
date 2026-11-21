@@ -16,3 +16,4 @@ Time and randomness are passed in. `test/sim-purity.test.ts` enforces this. See 
 - `map.ts`: `generateMap(seed, playerAttack)` makes the 15×15 terrain and 8 camps (tier 1 nearest .. 8 farthest), seeded from the save. Also `distance`, `travelTime`, `armyAttack` / `armyDefence`, the rubber-band `campGarrison`, `campLoot` and `campThreat`.
 - `battle.ts`: `fight` (TW-style: attack vs class-weighted defence, ±15% seeded luck, loser loses all, winner loses (loser/winner)^1.5), `carryCapacity`, `takeLoot` (even split across resources).
 - `march.ts`: `sendAttack`, `recallMarch`, `march-arrive` (battle, loot, report, turn for home) and `march-return` (soldiers and loot home) handlers. Soldiers away still use population. Reports are capped at 50.
+- `reports.ts`: report inbox commands: `unreadReports`, `markReportRead`, `markAllReportsRead`, `deleteReport`.
