@@ -7,6 +7,7 @@ import { hiddenAmount, militia, wallMultiplier, watchtowerWarning } from './defe
 import { schedule } from './events';
 import { distanceFromVillage, travelTime } from './map';
 import { MAX_REPORTS } from './march';
+import { promotionNote, recordBattle } from './veterancy';
 import type { EventHandler } from './advance';
 import type { Rng } from './rng';
 import type { GameState } from './state';
@@ -79,6 +80,7 @@ export const onRaidArrive: EventHandler = (state, event, ctx) => {
 
   const defenders = { ...state.troops };
   const result = fight(raid.troops, defenders, ctx.rng, villageDefenceBonus(state), { defender: playerGear(state) });
+  const promoted = recordBattle(state, defenders, result.defenderLosses, !result.attackerWon, result.attackStrength / Math.max(1, result.defenceStrength));
   state.troops = result.defenderSurvivors;
 
   let stolen = Object.fromEntries(RESOURCES.map((r) => [r, 0])) as Record<ResourceId, number>;
@@ -107,6 +109,7 @@ export const onRaidArrive: EventHandler = (state, event, ctx) => {
     defendersLost: result.defenderLosses,
     loot: stolen,
     capacity,
+    ...promotionNote(promoted),
     attackStrength: Math.round(result.attackStrength),
     defenceStrength: Math.round(result.defenceStrength),
     read: false,

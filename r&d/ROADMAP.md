@@ -26,7 +26,7 @@ Work down this list in order. When Aaron says "go", pick up the first unchecked 
 - [x] Smithy: craft-tier research for weapon and armour tracks per unit
 - [x] Mine metal tiers, ore by tier, smelting into ingots
 - [x] Re-equip units with metal (ingot cost per soldier)
-- [ ] Veterancy
+- [x] Veterancy
 
 ## v0.5 — The Lord
 - [ ] Lord's Keep, Lord unit, XP, levels, titles

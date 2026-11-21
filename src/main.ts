@@ -109,6 +109,7 @@ function welcome(s: CatchUpSummary | undefined, source: StartResult['source']): 
         : `bandits raided you ${raided === 1 ? 'once' : `${raided} times`} (${s.raids.lost} got through: see Reports)`,
     );
   }
+  if (s.promotions.length) bits.push(s.promotions.join(', '));
   if (s.smelted.length) bits.push(`${s.smelted.join(' and ')} ingots smelted`);
   if (s.researched.length) bits.push(`the smiths finished ${s.researched.join(' and ')}`);
   if (s.resets) bits.push(`the bandit camps are back${s.warlord ? ` and ${s.warlord} has made camp` : ''}`);
