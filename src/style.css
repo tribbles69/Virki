@@ -152,3 +152,11 @@ p.b-note { margin: 6px 0 0; }
 .threat-risky { color: #f0b060; }
 .threat-deadly { color: var(--bad); }
 .threat-no-army { color: var(--muted); font-weight: 600; }
+
+/* Attack form */
+.attack { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+.attack-title { margin: 0 0 8px; font-size: 0.95rem; }
+.attack-row { display: grid; grid-template-columns: 1fr 5.5rem auto; gap: 8px; align-items: center; margin-bottom: 8px; }
+.attack-label { display: flex; flex-direction: column; font-weight: 600; }
+.attack .send { width: 100%; margin-top: 8px; }
+.tile.camp.targeted { box-shadow: inset 0 0 0 2px var(--bad); }

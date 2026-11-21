@@ -22,6 +22,8 @@ export const MIGRATIONS: Record<number, Migration> = {
   1: (s) => ({ ...s, version: 2, troops: {}, recruitQueue: [] }),
   // v0.2: the map and its bandit camps, sized to the army the player already has.
   2: (s) => ({ ...s, version: 3, map: generateMap(String(s.seed), armyAttack(isObj(s.troops) ? s.troops : {})) }),
+  // v0.2: armies on the march and battle reports.
+  3: (s) => ({ ...s, version: 4, marches: [], reports: [] }),
 };
 
 export class SaveError extends Error {}
@@ -101,6 +103,18 @@ function normalise(s: Record<string, unknown>): GameState {
     for (const r of RESOURCES) c.loot[r] = isNum(c.loot[r]) ? c.loot[r] : 0;
   }
 
+  if (!Array.isArray(s.marches)) throw bad('marches');
+  for (const m of s.marches) {
+    if (!isObj(m) || !isNum(m.id) || !isNum(m.campId) || !isObj(m.troops) || !isObj(m.sent) || !isObj(m.loot)) throw bad('marches');
+    if (m.phase !== 'outbound' && m.phase !== 'returning') throw bad('marches');
+    for (const u of UNITS) {
+      (m.troops as Record<string, unknown>)[u] = isNum(m.troops[u]) ? m.troops[u] : 0;
+      (m.sent as Record<string, unknown>)[u] = isNum(m.sent[u]) ? m.sent[u] : 0;
+    }
+  }
+  if (!Array.isArray(s.reports)) throw bad('reports');
+  for (const r of s.reports) if (!isObj(r) || !isNum(r.id) || typeof r.won !== 'boolean') throw bad('reports');
+
   return {
     version: SAVE_VERSION,
     seed: s.seed,
@@ -114,5 +128,7 @@ function normalise(s: Record<string, unknown>): GameState {
     troops,
     recruitQueue: s.recruitQueue as GameState['recruitQueue'],
     map: map as unknown as GameState['map'],
+    marches: s.marches as GameState['marches'],
+    reports: s.reports as GameState['reports'],
   };
 }

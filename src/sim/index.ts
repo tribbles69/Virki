@@ -12,3 +12,5 @@ export * from './recruit';
 export * from './data/units';
 export * from './map';
 export * from './data/map';
+export * from './battle';
+export * from './march';

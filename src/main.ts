@@ -12,8 +12,13 @@ import {
   RESOURCES,
   RESOURCE_NAMES,
   UNIT_DATA,
+  ATTACK_BLOCKER_TEXT,
+  recallMarch,
+  reportHeadline,
+  sendAttack,
   type GameState,
 } from './sim';
+import { clockTime } from './ui/format';
 import { BarracksView } from './ui/barracks';
 import { MapView } from './ui/mapview';
 import { SaveStore } from './game/db';
@@ -70,6 +75,8 @@ function welcome(s: CatchUpSummary | undefined, source: StartResult['source']): 
   const bits = RESOURCES.filter((r) => s.gained[r] > 0).map((r) => `+${fullNum(s.gained[r])} ${RESOURCE_NAMES[r].toLowerCase()}`);
   for (const u of s.upgraded) bits.push(`${u.name} reached level ${u.level}`);
   if (s.trained.length) bits.push(`${s.trained.map((t) => t.label).join(' and ')} trained`);
+  const fought = s.battles.won + s.battles.lost;
+  if (fought) bits.push(`${fought} battle${fought === 1 ? '' : 's'} fought (${s.battles.won} won)`);
   return `Away for ${formatDuration(s.awayMs)}.${bits.length ? ` ${bits.join(', ')}.` : ''}`;
 }
 
@@ -121,7 +128,25 @@ async function main() {
     /* ignore */
   }
   showTab(savedTab && savedTab in panes ? (savedTab as Tab) : 'village');
-  const mapView = new MapView(mapPane);
+  const mapView = new MapView(mapPane, {
+    attack: async (campId, troops) => {
+      const r = await game.act((s) => sendAttack(s, campId, troops));
+      if (!r.ok) {
+        toast(ATTACK_BLOCKER_TEXT[r.reason], 'error', 3_000);
+        return false;
+      }
+      const m = game.state.marches.find((x) => x.id === r.marchId);
+      const camp = game.state.map.camps.find((c) => c.id === campId);
+      if (m && camp) toast(`Your army marches on ${camp.name}. It arrives at ${clockTime(m.arriveAt, Date.now())}.`);
+      return true;
+    },
+    recall: async (marchId) => {
+      const m = game.state.marches.find((x) => x.id === marchId);
+      if (!m) return;
+      if (!confirm('Call this army back? It will turn round and walk home.')) return;
+      await game.act((s) => recallMarch(s, marchId));
+    },
+  });
 
   const barracks = new BarracksView(barracksPane, {
     recruit: async (unit, count) => {
@@ -167,6 +192,16 @@ async function main() {
     if (prev && s.recruitQueue.length < last.recruitQueue.length && s.troops[prev.unit] > last.troops[prev.unit]) {
       toast(`${prev.count} ${prev.count === 1 ? UNIT_DATA[prev.unit].name : UNIT_DATA[prev.unit].plural} ready for battle.`);
     }
+    // Battles fought and armies home since the last update.
+    const seen = new Set(last.reports.map((r) => r.id));
+    const fresh = s.reports.filter((r) => !seen.has(r.id));
+    if (fresh.length === 1) toast(reportHeadline(fresh[0]), fresh[0].won ? 'info' : 'error', 8_000);
+    else if (fresh.length > 1) toast(`${fresh.length} battles fought: ${fresh.filter((r) => r.won).length} won.`, 'info', 8_000);
+    const homeNow = last.marches.filter((m) => m.phase === 'returning' && !s.marches.some((x) => x.id === m.id));
+    if (homeNow.length > 0 && fresh.length === 0) {
+      const camp = s.map.camps.find((c) => c.id === homeNow[0].campId);
+      toast(homeNow.length === 1 ? `Your army is home from ${camp?.name ?? 'the field'}.` : `${homeNow.length} armies are home.`);
+    }
     last = s;
   });
 
@@ -175,7 +210,7 @@ async function main() {
     const now = Date.now();
     view.update(s, now);
     barracks.update(s, now);
-    mapView.update(s);
+    mapView.update(s, now);
   };
   frame();
   setInterval(frame, 500);

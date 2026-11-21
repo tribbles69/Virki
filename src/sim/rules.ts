@@ -2,6 +2,7 @@ import type { Rules } from './advance';
 import { production } from './economy';
 import { BUILD_COMPLETE, onBuildComplete } from './build';
 import { RECRUIT_DONE, onRecruitDone } from './recruit';
+import { MARCH_ARRIVE, MARCH_RETURN, onMarchArrive, onMarchReturn } from './march';
 
 /**
  * The live game's rules. Features add their continuous systems (production)
@@ -12,5 +13,7 @@ export const defaultRules: Rules = {
   handlers: {
     [BUILD_COMPLETE]: onBuildComplete,
     [RECRUIT_DONE]: onRecruitDone,
+    [MARCH_ARRIVE]: onMarchArrive,
+    [MARCH_RETURN]: onMarchReturn,
   },
 };

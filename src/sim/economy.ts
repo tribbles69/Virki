@@ -35,6 +35,7 @@ export function population(state: GameState): Population {
   let troops = 0;
   for (const u of UNITS) troops += state.troops[u] * UNIT_DATA[u].pop;
   for (const batch of state.recruitQueue) troops += (batch.count - batch.trained) * UNIT_DATA[batch.unit].pop;
+  for (const m of state.marches) for (const u of UNITS) troops += m.troops[u] * UNIT_DATA[u].pop;
   used += troops;
   return { cap, used, free: cap - used, troops };
 }
