@@ -10,6 +10,11 @@ import {
   researchBlockerText,
   researchInfo,
   startResearch,
+  cancelLastSmelt,
+  smelt,
+  smeltBlockerText,
+  METAL_DATA,
+  METALS,
   startUpgrade,
   upgradeInfo,
   BUILDINGS,
@@ -31,6 +36,7 @@ import {
 import { clockTime } from './ui/format';
 import { BarracksView } from './ui/barracks';
 import { SmithyView } from './ui/smithyview';
+import { ForgeView } from './ui/forgeview';
 import { MapView } from './ui/mapview';
 import { ReportsView } from './ui/reports';
 import { DefenceView } from './ui/defences';
@@ -100,6 +106,7 @@ function welcome(s: CatchUpSummary | undefined, source: StartResult['source']): 
         : `bandits raided you ${raided === 1 ? 'once' : `${raided} times`} (${s.raids.lost} got through: see Reports)`,
     );
   }
+  if (s.smelted.length) bits.push(`${s.smelted.join(' and ')} ingots smelted`);
   if (s.researched.length) bits.push(`the smiths finished ${s.researched.join(' and ')}`);
   if (s.resets) bits.push(`the bandit camps are back${s.warlord ? ` and ${s.warlord} has made camp` : ''}`);
   return `Away for ${formatDuration(s.awayMs)}.${bits.length ? ` ${bits.join(', ')}.` : ''}`;
@@ -216,6 +223,19 @@ async function main() {
       await game.act((s) => cancelResearch(s));
     },
   });
+  const forgeView = new ForgeView(barracksPane, {
+    smelt: async (metal, count) => {
+      const r = await game.act((s) => smelt(s, metal, count));
+      if (!r.ok) toast(smeltBlockerText(metal, r.reason), 'error', 3_000);
+      return r.ok;
+    },
+    cancel: async () => {
+      const b = game.state.smeltQueue[game.state.smeltQueue.length - 1];
+      if (!b) return;
+      if (!confirm(`Cancel smelting ${b.count} ${METAL_DATA[b.metal].name} ingots? You’ll get the ore and wood back.`)) return;
+      await game.act((s) => cancelLastSmelt(s));
+    },
+  });
 
   const view = new VillageView($('bar'), villagePane, {
     upgrade: async (b) => {
@@ -239,6 +259,14 @@ async function main() {
   game.subscribe((s) => {
     for (const b of BUILDINGS) {
       if (s.buildings[b] > last.buildings[b]) toast(`${BUILDING_DATA[b].name} reached level ${s.buildings[b]}.`);
+    }
+    // Ingots out of the furnace, and newly unlocked metals.
+    for (const m of METALS) {
+      const made = s.ingots[m] - last.ingots[m];
+      if (made > 0) toast(`The forge cooled: ${made} ${METAL_DATA[m].name} ingot${made === 1 ? '' : 's'} ready.`);
+      if (s.buildings.mine >= METAL_DATA[m].mine && last.buildings.mine < METAL_DATA[m].mine && m !== 'copper') {
+        toast(`Your miners struck ${METAL_DATA[m].name.toLowerCase()} ore! It will trickle in from now on.`, 'info', 10_000);
+      }
     }
     // Smithy research finished.
     for (const u of Object.keys(s.smithy) as (keyof typeof s.smithy)[]) {
@@ -279,6 +307,7 @@ async function main() {
     view.update(s, now);
     barracks.update(s, now);
     smithyView.update(s, now);
+    forgeView.update(s, now);
     mapView.update(s, now);
     reportsView.update(s, now);
     defenceView.update(s, now);

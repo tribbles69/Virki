@@ -14,6 +14,8 @@ import {
   STABLE_SPEED,
   SMITHY_SPEED,
   CRAFT_TIERS,
+  METALS,
+  METAL_DATA,
   type BuildingId,
   type GameState,
 } from '../sim';
@@ -36,7 +38,14 @@ export function effectLine(state: GameState, b: BuildingId, nextLevel: number, m
   const produced = RESOURCES.find((r) => PRODUCERS[r].building === b);
   if (produced) {
     const name = RESOURCE_NAMES[produced].toLowerCase();
-    return `${arrow(fullNum(productionPerHour(s, produced)), fullNum(productionPerHour(next, produced)))} ${name}/h`;
+    const line = `${arrow(fullNum(productionPerHour(s, produced)), fullNum(productionPerHour(next, produced)))} ${name}/h`;
+    if (b === 'mine' && !maxed) {
+      const unlock = METALS.find((m) => METAL_DATA[m].mine === nextLevel);
+      if (unlock) return `${line} · strikes ${METAL_DATA[unlock].name.toLowerCase()} ore!`;
+      const upcoming = METALS.find((m) => METAL_DATA[m].mine > nextLevel);
+      if (upcoming) return `${line} · ${METAL_DATA[upcoming].name} at level ${METAL_DATA[upcoming].mine}`;
+    }
+    return line;
   }
   switch (b) {
     case 'warehouse':

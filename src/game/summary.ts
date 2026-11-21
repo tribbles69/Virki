@@ -5,6 +5,8 @@ import {
   UNITS,
   UNIT_DATA,
   craftName,
+  METALS,
+  METAL_DATA,
   type BuildingId,
   type GameState,
   type ResourceId,
@@ -29,6 +31,8 @@ export interface CatchUpSummary {
   warlord?: string;
   /** Smithy research finished while away, e.g. "Axemen: Padded weapons". */
   researched: string[];
+  /** Ingots that came out of the forge while away, e.g. "20 Copper". */
+  smelted: string[];
 }
 
 /** Soldiers still to be trained, per unit. */
@@ -61,6 +65,7 @@ export function summarise(before: GameState, after: GameState): CatchUpSummary {
     if (after.smithy[u].weapon > before.smithy[u].weapon) researched.push(`${UNIT_DATA[u].plural}: ${craftName(after.smithy[u].weapon)} weapons`);
     if (after.smithy[u].armour > before.smithy[u].armour) researched.push(`${UNIT_DATA[u].plural}: ${craftName(after.smithy[u].armour)} armour`);
   }
+  const smelted = METALS.filter((m) => after.ingots[m] > before.ingots[m]).map((m) => `${after.ingots[m] - before.ingots[m]} ${METAL_DATA[m].name}`);
   return {
     awayMs: Math.max(0, after.time - before.time),
     gained,
@@ -70,6 +75,7 @@ export function summarise(before: GameState, after: GameState): CatchUpSummary {
     raids,
     resets,
     researched,
+    smelted,
     ...(warlord ? { warlord } : {}),
   };
 }

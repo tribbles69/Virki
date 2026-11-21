@@ -243,3 +243,16 @@ p.b-note { margin: 6px 0 0; }
 .smithy-next { color: var(--muted); font-size: 0.82rem; }
 .smithy-cost { font-size: 0.8rem; font-variant-numeric: tabular-nums; margin-top: 2px; }
 .smithy-text .b-note:empty { display: none; }
+
+/* Forge */
+.metal-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 4px 0; }
+.metal-table th { text-align: left; color: var(--muted); font-weight: 600; padding: 2px 0; }
+.metal-table td { padding: 3px 0; }
+.metal-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.metal-select { flex: 0 0 7.5rem; appearance: auto; }
+.forge-queue:empty { display: none; }
+.forge-queue { margin-top: 10px; }
+.forge input.count { flex: 1 1 4rem; min-width: 4rem; }
+.forge .recruit button { padding: 8px 10px; }
+.forge .recruit { flex-wrap: wrap; }
+.forge .recruit .upgrade { flex: 1 1 100%; }

@@ -24,7 +24,7 @@ Work down this list in order. When Aaron says "go", pick up the first unchecked 
 
 ## v0.4 — Steel and craft
 - [x] Smithy: craft-tier research for weapon and armour tracks per unit
-- [ ] Mine metal tiers, ore by tier, smelting into ingots
+- [x] Mine metal tiers, ore by tier, smelting into ingots
 - [ ] Re-equip units with metal (ingot cost per soldier)
 - [ ] Veterancy
 
