@@ -12,6 +12,8 @@ import {
   watchtowerWarning,
   hiddenAmount,
   STABLE_SPEED,
+  SMITHY_SPEED,
+  CRAFT_TIERS,
   type BuildingId,
   type GameState,
 } from '../sim';
@@ -63,6 +65,13 @@ export function effectLine(state: GameState, b: BuildingId, nextLevel: number, m
       return maxed
         ? `Trains cavalry ${(1 / now).toFixed(1)}× faster`
         : `Trains cavalry ${Math.max(1, Math.round((now / then - 1) * 100))}% faster next level`;
+    }
+    case 'smithy': {
+      if (nextLevel === 1) return 'Researches better weapons and armour for every unit';
+      const best = (lvl: number) => [...CRAFT_TIERS].reverse().find((t) => t.smithy <= lvl)?.name ?? 'Rags';
+      const unlock = CRAFT_TIERS.find((t) => t.smithy === nextLevel);
+      if (maxed) return `Every craft tier unlocked · research ${(1 / curveValue(SMITHY_SPEED, s.buildings.smithy)).toFixed(1)}× faster`;
+      return unlock ? `Unlocks ${unlock.name} at level ${nextLevel}` : `Craft up to ${best(s.buildings.smithy)} · research faster next level`;
     }
     case 'hiding':
       return maxed

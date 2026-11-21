@@ -1,5 +1,6 @@
 import {
   armyDefence,
+  playerGear,
   hiddenAmount,
   militia,
   troopCount,
@@ -72,7 +73,7 @@ export class DefenceView {
       this.rows[i].time.textContent = `lands in ${countdown(r.arriveAt - now)} · ${clockTime(r.arriveAt, now)}`;
     });
 
-    const home = armyDefence(s.troops);
+    const home = armyDefence(s.troops, playerGear(s));
     const wall = s.buildings.wall;
     const total = Math.round((home + militia(wall)) * wallMultiplier(wall));
     const tower = s.buildings.watchtower;

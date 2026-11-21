@@ -17,16 +17,25 @@ export function troopCount(t: Partial<Troops>): number {
 }
 
 /**
- * Defender's strength against this attack. Each unit's defence is weighted by
- * how much of the attack comes from each class (TW-style). All current units
- * are infantry, so today this is just defence vs infantry.
+ * Per-unit multipliers from the Smithy (and later metals and veterancy):
+ * attack for the weapon track, defence for the armour track. Missing = ×1.
+ * Bandits fight with no gear.
  */
-export function defenceAgainst(attackers: Partial<Troops>, defenders: Partial<Troops>): number {
+export type Gear = Partial<Record<UnitId, { attack: number; defence: number }>>;
+
+const atk = (u: UnitId, gear?: Gear) => UNIT_DATA[u].attack * (gear?.[u]?.attack ?? 1);
+
+/**
+ * Defender's strength against this attack. Each unit's defence is weighted by
+ * how much of the attack comes from each class (TW-style): bandit Spearmen hold
+ * well against cavalry, Swordsmen against infantry.
+ */
+export function defenceAgainst(attackers: Partial<Troops>, defenders: Partial<Troops>, attackerGear?: Gear, defenderGear?: Gear): number {
   const attackByClass = { infantry: 0, cavalry: 0, archer: 0 };
   for (const u of UNITS) {
     const cls = UNIT_DATA[u].cls;
     if (cls === 'scout') continue; // scouts don't fight
-    attackByClass[cls] += (attackers[u] ?? 0) * UNIT_DATA[u].attack;
+    attackByClass[cls] += (attackers[u] ?? 0) * atk(u, attackerGear);
   }
   const total = attackByClass.infantry + attackByClass.cavalry + attackByClass.archer;
   if (total <= 0) return 0;
@@ -34,13 +43,14 @@ export function defenceAgainst(attackers: Partial<Troops>, defenders: Partial<Tr
   for (const u of UNITS) {
     const d = UNIT_DATA[u].defence;
     const n = defenders[u] ?? 0;
-    defence += n * ((d.infantry * attackByClass.infantry + d.cavalry * attackByClass.cavalry + d.archer * attackByClass.archer) / total);
+    const armour = defenderGear?.[u]?.defence ?? 1;
+    defence += n * armour * ((d.infantry * attackByClass.infantry + d.cavalry * attackByClass.cavalry + d.archer * attackByClass.archer) / total);
   }
   return defence;
 }
 
-export function attackStrength(attackers: Partial<Troops>): number {
-  return UNITS.reduce((n, u) => n + (attackers[u] ?? 0) * UNIT_DATA[u].attack, 0);
+export function attackStrength(attackers: Partial<Troops>, gear?: Gear): number {
+  return UNITS.reduce((n, u) => n + (attackers[u] ?? 0) * atk(u, gear), 0);
 }
 
 export interface BattleResult {
@@ -78,10 +88,16 @@ export interface DefenceBonus {
   base?: number;
 }
 
-export function fight(attackers: Partial<Troops>, defenders: Partial<Troops>, rng: Rng, bonus: DefenceBonus = {}): BattleResult {
+export function fight(
+  attackers: Partial<Troops>,
+  defenders: Partial<Troops>,
+  rng: Rng,
+  bonus: DefenceBonus = {},
+  gear: { attacker?: Gear; defender?: Gear } = {},
+): BattleResult {
   const luck = Math.round((rng.next() * 2 - 1) * LUCK_RANGE * 1000) / 1000;
-  const att = attackStrength(attackers) * (1 + luck);
-  const def = (defenceAgainst(attackers, defenders) + (bonus.base ?? 0)) * (bonus.multiplier ?? 1);
+  const att = attackStrength(attackers, gear.attacker) * (1 + luck);
+  const def = (defenceAgainst(attackers, defenders, gear.attacker, gear.defender) + (bonus.base ?? 0)) * (bonus.multiplier ?? 1);
   const attackerWon = att > def;
   const winnerShare = attackerWon ? (att > 0 ? (def / att) ** LOSS_EXPONENT : 0) : def > 0 ? (att / def) ** LOSS_EXPONENT : 0;
   const a = applyLosses(attackers, attackerWon ? winnerShare : 1);

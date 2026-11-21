@@ -1,3 +1,4 @@
+import { playerGear } from './smithy';
 import { carryCapacity, fight, noTroops, takeLoot, troopCount, type Troops } from './battle';
 import { RESOURCES, type ResourceId } from './data/resources';
 import { UNITS } from './data/units';
@@ -200,7 +201,7 @@ export const onMarchArrive: EventHandler = (state, event, ctx) => {
   }
 
   const defenders = { ...camp.troops };
-  const result = fight(march.troops, defenders, ctx.rng);
+  const result = fight(march.troops, defenders, ctx.rng, {}, { attacker: playerGear(state) });
   camp.troops = result.defenderSurvivors;
   march.troops = result.attackerSurvivors;
 

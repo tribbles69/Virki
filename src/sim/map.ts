@@ -1,4 +1,4 @@
-import { defenceAgainst } from './battle';
+import { defenceAgainst, type Gear } from './battle';
 import { deriveSeed, Rng } from './rng';
 import {
   CAMP_COUNT,
@@ -61,16 +61,16 @@ export function travelTime(units: Partial<Record<UnitId, number>>, tiles: number
 }
 
 /** Total attack of a group, all classes added (scouts add nothing). */
-export function armyAttack(troops: Partial<Record<UnitId, number>>): number {
+export function armyAttack(troops: Partial<Record<UnitId, number>>, gear?: Gear): number {
   let total = 0;
-  for (const u of UNITS) total += (troops[u] ?? 0) * UNIT_DATA[u].attack;
+  for (const u of UNITS) total += (troops[u] ?? 0) * UNIT_DATA[u].attack * (gear?.[u]?.attack ?? 1);
   return total;
 }
 
 /** Defence of a group against infantry (bandits only send infantry). */
-export function armyDefence(troops: Partial<Record<UnitId, number>>): number {
+export function armyDefence(troops: Partial<Record<UnitId, number>>, gear?: Gear): number {
   let total = 0;
-  for (const u of UNITS) total += (troops[u] ?? 0) * UNIT_DATA[u].defence.infantry;
+  for (const u of UNITS) total += (troops[u] ?? 0) * UNIT_DATA[u].defence.infantry * (gear?.[u]?.defence ?? 1);
   return total;
 }
 
@@ -171,11 +171,11 @@ export function generateMap(seed: string, playerAttack = 0): WorldMap {
 export type Threat = 'no-army' | 'easy' | 'fair' | 'risky' | 'deadly';
 
 /** Rough read on a camp compared with the army at home (exact numbers need scouts). */
-export function campThreat(homeTroops: Partial<Record<UnitId, number>>, camp: Camp): Threat {
-  const attack = armyAttack(homeTroops);
+export function campThreat(homeTroops: Partial<Record<UnitId, number>>, camp: Camp, gear?: Gear): Threat {
+  const attack = armyAttack(homeTroops, gear);
   if (attack <= 0) return 'no-army';
   // Weighted by your mix: bandit Spearmen hold well against cavalry, Swordsmen against infantry.
-  const ratio = attack / Math.max(1, defenceAgainst(homeTroops, camp.troops));
+  const ratio = attack / Math.max(1, defenceAgainst(homeTroops, camp.troops, gear));
   if (ratio >= 2) return 'easy';
   if (ratio >= 1.2) return 'fair';
   if (ratio >= 0.8) return 'risky';

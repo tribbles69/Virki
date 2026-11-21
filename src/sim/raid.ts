@@ -1,3 +1,4 @@
+import { playerGear } from './smithy';
 import { carryCapacity, fight, takeLoot, type Troops } from './battle';
 import { RAID_SHARE, RAID_TIER_WEIGHTS, RAID_WINDOW_HOURS, RAIDS_NEED_BARRACKS, RAIDS_PER_DAY } from './data/defence';
 import { RESOURCES, type ResourceId } from './data/resources';
@@ -77,7 +78,7 @@ export const onRaidArrive: EventHandler = (state, event, ctx) => {
   state.raids = state.raids.filter((r) => r.id !== raidId);
 
   const defenders = { ...state.troops };
-  const result = fight(raid.troops, defenders, ctx.rng, villageDefenceBonus(state));
+  const result = fight(raid.troops, defenders, ctx.rng, villageDefenceBonus(state), { defender: playerGear(state) });
   state.troops = result.defenderSurvivors;
 
   let stolen = Object.fromEntries(RESOURCES.map((r) => [r, 0])) as Record<ResourceId, number>;
