@@ -9,6 +9,9 @@ import {
   SAVE_VERSION,
   TERRAIN,
   UNITS,
+  MAX_CRAFT_TIER,
+  TRACKS,
+  newSmithy,
   type GameState,
 } from '../sim';
 
@@ -30,6 +33,8 @@ export const MIGRATIONS: Record<number, Migration> = {
   5: (s) => ({ ...s, version: 6, raids: [] }),
   // v0.3: Stable, cavalry and scouts (new units and buildings fill themselves in); scouting intel needs the last reset time.
   6: (s) => ({ ...s, version: 7, lastResetAt: 0 }),
+  // v0.4: Smithy research (craft tiers per unit and track).
+  7: (s) => ({ ...s, version: 8, smithy: {}, researchQueue: [] }),
 };
 
 export class SaveError extends Error {}
@@ -119,6 +124,17 @@ function normalise(s: Record<string, unknown>): GameState {
       (m.sent as Record<string, unknown>)[u] = isNum(m.sent[u]) ? m.sent[u] : 0;
     }
   }
+  if (!isObj(s.smithy)) throw bad('smithy');
+  if (!Array.isArray(s.researchQueue)) throw bad('research queue');
+  const smithy = newSmithy();
+  for (const u of UNITS) {
+    const row = s.smithy[u];
+    for (const t of TRACKS) {
+      const tier = isObj(row) && row[t] !== undefined ? row[t] : 0;
+      if (!isNum(tier) || tier < 0 || tier > MAX_CRAFT_TIER || !Number.isInteger(tier)) throw bad(`smithy ${u}`);
+      smithy[u][t] = tier;
+    }
+  }
   if (!Array.isArray(s.raids)) throw bad('raids');
   for (const r of s.raids) if (!isObj(r) || !isNum(r.id) || !isNum(r.arriveAt) || !isObj(r.troops)) throw bad('raids');
   if (!Array.isArray(s.reports)) throw bad('reports');
@@ -144,5 +160,7 @@ function normalise(s: Record<string, unknown>): GameState {
     resetsDone: isNum(s.resetsDone) ? s.resetsDone : 0,
     raids: s.raids as GameState['raids'],
     lastResetAt: isNum(s.lastResetAt) ? s.lastResetAt : 0,
+    smithy,
+    researchQueue: s.researchQueue as GameState['researchQueue'],
   };
 }

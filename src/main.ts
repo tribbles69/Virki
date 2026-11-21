@@ -5,6 +5,11 @@ import {
   cancelRecruit,
   recruit,
   recruitBlockerText,
+  cancelResearch,
+  craftName,
+  researchBlockerText,
+  researchInfo,
+  startResearch,
   startUpgrade,
   upgradeInfo,
   BUILDINGS,
@@ -25,6 +30,7 @@ import {
 } from './sim';
 import { clockTime } from './ui/format';
 import { BarracksView } from './ui/barracks';
+import { SmithyView } from './ui/smithyview';
 import { MapView } from './ui/mapview';
 import { ReportsView } from './ui/reports';
 import { DefenceView } from './ui/defences';
@@ -94,6 +100,7 @@ function welcome(s: CatchUpSummary | undefined, source: StartResult['source']): 
         : `bandits raided you ${raided === 1 ? 'once' : `${raided} times`} (${s.raids.lost} got through: see Reports)`,
     );
   }
+  if (s.researched.length) bits.push(`the smiths finished ${s.researched.join(' and ')}`);
   if (s.resets) bits.push(`the bandit camps are back${s.warlord ? ` and ${s.warlord} has made camp` : ''}`);
   return `Away for ${formatDuration(s.awayMs)}.${bits.length ? ` ${bits.join(', ')}.` : ''}`;
 }
@@ -197,6 +204,18 @@ async function main() {
     },
     goToVillage: () => showTab('village'),
   });
+  const smithyView = new SmithyView(barracksPane, {
+    research: async (unit, track) => {
+      const r = await game.act((s) => startResearch(s, unit, track));
+      if (!r.ok) toast(researchBlockerText(researchInfo(game.state, unit, track)) || 'Can’t research that right now.', 'error', 3_000);
+    },
+    cancel: async () => {
+      const job = game.state.researchQueue[0];
+      if (!job) return;
+      if (!confirm(`Cancel ${UNIT_DATA[job.unit].name} ${job.track === 'weapon' ? 'weapons' : 'armour'} research? You’ll get a full refund.`)) return;
+      await game.act((s) => cancelResearch(s));
+    },
+  });
 
   const view = new VillageView($('bar'), villagePane, {
     upgrade: async (b) => {
@@ -220,6 +239,11 @@ async function main() {
   game.subscribe((s) => {
     for (const b of BUILDINGS) {
       if (s.buildings[b] > last.buildings[b]) toast(`${BUILDING_DATA[b].name} reached level ${s.buildings[b]}.`);
+    }
+    // Smithy research finished.
+    for (const u of Object.keys(s.smithy) as (keyof typeof s.smithy)[]) {
+      if (s.smithy[u].weapon > last.smithy[u].weapon) toast(`The smiths finished: ${UNIT_DATA[u].plural} now carry ${craftName(s.smithy[u].weapon)} weapons.`);
+      if (s.smithy[u].armour > last.smithy[u].armour) toast(`The smiths finished: ${UNIT_DATA[u].plural} now wear ${craftName(s.smithy[u].armour)} armour.`);
     }
     // A training batch finished (the queue shrank while soldiers arrived).
     const prev = last.recruitQueue[0];
@@ -254,6 +278,7 @@ async function main() {
     const now = Date.now();
     view.update(s, now);
     barracks.update(s, now);
+    smithyView.update(s, now);
     mapView.update(s, now);
     reportsView.update(s, now);
     defenceView.update(s, now);

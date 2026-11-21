@@ -6,9 +6,10 @@ import { UNITS, type UnitId } from './data/units';
 import { generateMap, type WorldMap } from './map';
 import type { BattleReport, March } from './march';
 import type { Raid } from './raid';
+import { newSmithy, type ResearchJob, type SmithyState } from './smithy';
 
 /** Bump when the save shape changes, and add a migration in src/game/migrate.ts. */
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 
 /** The entire game. Plain JSON-safe data only: it is what gets saved. */
 export interface GameState {
@@ -49,6 +50,10 @@ export interface GameState {
   lastResetAt: number;
   /** Bandit raids on their way to the village (seen or not yet spotted). */
   raids: Raid[];
+  /** Craft tier per unit, per track (Smithy research). */
+  smithy: SmithyState;
+  /** Smithy research in progress. */
+  researchQueue: ResearchJob[];
 }
 
 export interface BuildJob {
@@ -99,5 +104,7 @@ export function newGame(seed: string, now: number): GameState {
     resetsDone: 0,
     lastResetAt: 0,
     raids: [],
+    smithy: newSmithy(),
+    researchQueue: [],
   };
 }

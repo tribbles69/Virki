@@ -4,6 +4,7 @@ import {
   RESOURCES,
   UNITS,
   UNIT_DATA,
+  craftName,
   type BuildingId,
   type GameState,
   type ResourceId,
@@ -26,6 +27,8 @@ export interface CatchUpSummary {
   /** Daily resets that happened while away, and today's Warlord if there is one. */
   resets: number;
   warlord?: string;
+  /** Smithy research finished while away, e.g. "Axemen: Padded weapons". */
+  researched: string[];
 }
 
 /** Soldiers still to be trained, per unit. */
@@ -53,6 +56,11 @@ export function summarise(before: GameState, after: GameState): CatchUpSummary {
   const raids = { held: defences.filter((r) => r.won).length, lost: defences.filter((r) => !r.won).length };
   const resets = after.resetsDone - before.resetsDone;
   const warlord = resets > 0 ? after.map.camps.find((c) => c.kind === 'warlord')?.name : undefined;
+  const researched: string[] = [];
+  for (const u of UNITS) {
+    if (after.smithy[u].weapon > before.smithy[u].weapon) researched.push(`${UNIT_DATA[u].plural}: ${craftName(after.smithy[u].weapon)} weapons`);
+    if (after.smithy[u].armour > before.smithy[u].armour) researched.push(`${UNIT_DATA[u].plural}: ${craftName(after.smithy[u].armour)} armour`);
+  }
   return {
     awayMs: Math.max(0, after.time - before.time),
     gained,
@@ -61,6 +69,7 @@ export function summarise(before: GameState, after: GameState): CatchUpSummary {
     battles,
     raids,
     resets,
+    researched,
     ...(warlord ? { warlord } : {}),
   };
 }

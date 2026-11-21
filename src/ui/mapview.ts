@@ -3,6 +3,7 @@ import {
   campIntel,
   isScoutingParty,
   campThreat,
+  playerGear,
   carryCapacity,
   isWarlord,
   nextResetAt,
@@ -258,7 +259,7 @@ export class MapView {
     );
 
     const emptied = troopCount(camp.troops) === 0;
-    const threat = campThreat(s.troops, camp);
+    const threat = campThreat(s.troops, camp, playerGear(s));
     d.append(el('p', `threat threat-${emptied ? 'easy' : threat}`, emptied ? 'Cleared: no bandits left' : THREAT_TEXT[threat]));
 
     // Exact numbers if you've scouted (or fought) here since the camps last respawned.

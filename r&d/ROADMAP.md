@@ -23,7 +23,7 @@ Work down this list in order. When Aaron says "go", pick up the first unchecked 
 - [x] Hiding Place, Stable + cavalry, Scouts
 
 ## v0.4 — Steel and craft
-- [ ] Smithy: craft-tier research for weapon and armour tracks per unit
+- [x] Smithy: craft-tier research for weapon and armour tracks per unit
 - [ ] Mine metal tiers, ore by tier, smelting into ingots
 - [ ] Re-equip units with metal (ingot cost per soldier)
 - [ ] Veterancy

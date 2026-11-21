@@ -231,3 +231,15 @@ p.b-note { margin: 6px 0 0; }
 .intel p { margin: 2px 0; }
 .intel-head { font-size: 0.8rem; color: var(--accent); }
 .intel-body { font-size: 0.9rem; }
+
+/* Smithy */
+.smithy-intro { margin: 0 2px; }
+.smithy-unit { padding: 10px 14px; }
+.smithy-name { margin: 0 0 6px; font-size: 1rem; }
+.smithy-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 0; }
+.smithy-row + .smithy-row { border-top: 1px solid var(--line); }
+.smithy-text { min-width: 0; }
+.smithy-now { font-weight: 600; font-size: 0.9rem; }
+.smithy-next { color: var(--muted); font-size: 0.82rem; }
+.smithy-cost { font-size: 0.8rem; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.smithy-text .b-note:empty { display: none; }

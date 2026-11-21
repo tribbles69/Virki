@@ -1,3 +1,4 @@
+import { playerGear } from './smithy';
 import { deriveSeed, Rng } from './rng';
 import {
   DAILY_VARIATION,
@@ -96,7 +97,7 @@ export const onDailyReset: EventHandler = (state, event) => {
   const away = troopsAway(state);
   const all = { ...state.troops };
   for (const u of UNITS) all[u] += away[u];
-  const attack = armyAttack(all);
+  const attack = armyAttack(all, playerGear(state));
 
   const camps = state.map.camps.filter((c) => c.id !== WARLORD_ID);
   for (const c of camps) {
