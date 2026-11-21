@@ -16,3 +16,5 @@ export * from './battle';
 export * from './march';
 export * from './reports';
 export * from './daily';
+export * from './defence';
+export * from './data/defence';

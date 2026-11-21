@@ -158,7 +158,17 @@ describe('building', () => {
 
   it('lists every building for the UI; the starting six are ready to build', () => {
     const list = allUpgrades(game());
-    expect(list.map((u) => u.name)).toEqual(['Great Hall', 'Woodcutter', 'Quarry', 'Farm', 'Mine', 'Warehouse', 'Barracks']);
+    expect(list.map((u) => u.name)).toEqual([
+      'Great Hall',
+      'Woodcutter',
+      'Quarry',
+      'Farm',
+      'Mine',
+      'Warehouse',
+      'Barracks',
+      'Wall',
+      'Watchtower',
+    ]);
     expect(list.slice(0, 6).every((u) => u.blocker === undefined)).toBe(true);
   });
 

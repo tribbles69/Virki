@@ -8,10 +8,12 @@ import {
   PRODUCERS,
   RESOURCES,
   RESOURCE_NAMES,
+  wallMultiplier,
+  watchtowerWarning,
   type BuildingId,
   type GameState,
 } from '../sim';
-import { fullNum } from './format';
+import { duration, fullNum } from './format';
 
 const withLevel = (s: GameState, b: BuildingId, level: number): GameState => ({
   ...s,
@@ -51,6 +53,17 @@ export function effectLine(state: GameState, b: BuildingId, nextLevel: number, m
       return maxed
         ? `Trains soldiers ${(1 / now).toFixed(1)}× faster`
         : `Trains soldiers ${Math.max(1, Math.round((now / then - 1) * 100))}% faster next level`;
+    }
+    case 'wall': {
+      if (nextLevel === 1) return `Raises your defence against bandit raids (×${wallMultiplier(1).toFixed(2)} at level 1)`;
+      const now = wallMultiplier(s.buildings.wall);
+      return maxed ? `Defence ×${now.toFixed(2)}` : `Defence ×${now.toFixed(2)} → ×${wallMultiplier(nextLevel).toFixed(2)}`;
+    }
+    case 'watchtower': {
+      const fmt = (ms: number) => duration(ms);
+      if (nextLevel === 1) return `Spots raids before they land (${fmt(watchtowerWarning(1))} warning at level 1)`;
+      const now = watchtowerWarning(s.buildings.watchtower);
+      return maxed ? `Spots raids ${fmt(now)} ahead` : `Spots raids ${fmt(now)} → ${fmt(watchtowerWarning(nextLevel))} ahead`;
     }
     default:
       return '';
