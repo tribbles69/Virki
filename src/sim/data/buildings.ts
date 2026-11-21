@@ -5,7 +5,7 @@ import type { ResourceId } from './resources';
 // Placeholder numbers (TW-like early game), to be tuned with the balance
 // simulator in v0.8. Edit these, not the logic.
 
-export const BUILDINGS = ['hall', 'woodcutter', 'quarry', 'farm', 'mine', 'warehouse', 'hiding', 'barracks', 'stable', 'smithy', 'wall', 'watchtower'] as const;
+export const BUILDINGS = ['hall', 'woodcutter', 'quarry', 'farm', 'mine', 'warehouse', 'hiding', 'barracks', 'stable', 'smithy', 'keep', 'wall', 'watchtower'] as const;
 export type BuildingId = (typeof BUILDINGS)[number];
 
 /** How many builds can run at once. */
@@ -120,6 +120,15 @@ export const BUILDING_DATA: Record<BuildingId, BuildingDef> = {
     minutes: 30,
     pop: pop(10, 1.17),
     requires: { hall: 5, barracks: 1 },
+  },
+  keep: {
+    name: "Lord's Keep",
+    max: 50,
+    start: 0,
+    cost: { wood: 380, stone: 380, ore: 380 },
+    minutes: 60,
+    pop: pop(10, 1.17),
+    requires: { hall: 10 },
   },
   watchtower: {
     name: 'Watchtower',

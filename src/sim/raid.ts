@@ -6,7 +6,8 @@ import { UNITS } from './data/units';
 import { hiddenAmount, militia, wallMultiplier, watchtowerWarning } from './defence';
 import { schedule } from './events';
 import { distanceFromVillage, travelTime } from './map';
-import { MAX_REPORTS } from './march';
+import { MAX_REPORTS, notes } from './march';
+import { awardLordXp, lordAvailable, lordStatus, withLordBonus } from './lord';
 import { promotionNote, recordBattle } from './veterancy';
 import type { EventHandler } from './advance';
 import type { Rng } from './rng';
@@ -79,7 +80,10 @@ export const onRaidArrive: EventHandler = (state, event, ctx) => {
   state.raids = state.raids.filter((r) => r.id !== raidId);
 
   const defenders = { ...state.troops };
-  const result = fight(raid.troops, defenders, ctx.rng, villageDefenceBonus(state), { defender: playerGear(state) });
+  const lordHome = lordAvailable(state);
+  const defenderGear = lordHome ? withLordBonus(playerGear(state), lordStatus(state).bonus, 'defence') : playerGear(state);
+  const result = fight(raid.troops, defenders, ctx.rng, villageDefenceBonus(state), { defender: defenderGear });
+  const lordNote = lordHome ? awardLordXp(state, result.attackStrength, !result.attackerWon) : undefined;
   const promoted = recordBattle(state, defenders, result.defenderLosses, !result.attackerWon, result.attackStrength / Math.max(1, result.defenceStrength));
   state.troops = result.defenderSurvivors;
 
@@ -109,7 +113,8 @@ export const onRaidArrive: EventHandler = (state, event, ctx) => {
     defendersLost: result.defenderLosses,
     loot: stolen,
     capacity,
-    ...promotionNote(promoted),
+    ...notes(promotionNote(promoted), lordNote),
+    ...(lordHome ? { lord: true } : {}),
     attackStrength: Math.round(result.attackStrength),
     defenceStrength: Math.round(result.defenceStrength),
     read: false,

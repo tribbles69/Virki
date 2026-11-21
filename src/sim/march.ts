@@ -5,6 +5,13 @@ import { UNITS } from './data/units';
 import { cancel, schedule } from './events';
 import { distanceFromVillage, travelTime } from './map';
 import { promotionNote, recordBattle } from './veterancy';
+import { awardLordXp, lordAvailable, lordStatus, withLordBonus, LORD_SPEED } from './lord';
+
+/** Combine veterancy and Lord notes for a report. */
+export function notes(vet: { promotions?: string[] }, lordNote?: string): { promotions?: string[] } {
+  const all = [...(vet.promotions ?? []), ...(lordNote ? [lordNote] : [])];
+  return all.length ? { promotions: all } : {};
+}
 import type { EventHandler } from './advance';
 import type { GameState } from './state';
 
@@ -28,6 +35,8 @@ export interface March {
   phase: 'outbound' | 'returning';
   /** True if called back before arriving. */
   recalled: boolean;
+  /** The Lord rides with this army (missing on marches from before v0.5). */
+  lord?: boolean;
   loot: Record<ResourceId, number>;
   /** The pending arrive/return event. */
   eventId: number;
@@ -59,8 +68,10 @@ export interface BattleReport {
   loot: Record<ResourceId, number>;
   /** Most the survivors could have carried. */
   capacity: number;
-  /** Veterancy rank changes from this battle, e.g. "Axemen are now Veterans". */
+  /** Veterancy rank changes and Lord level-ups from this battle, e.g. "Axemen are now Veterans". */
   promotions?: string[];
+  /** The Lord fought in this battle (leading the attack, or defending at home). */
+  lord?: boolean;
   /** Your attack after luck, and the bandits' defence (missing on reports from before v0.2.4). */
   attackStrength?: number;
   defenceStrength?: number;
@@ -98,13 +109,14 @@ export function campIntel(state: GameState, campId: number): CampIntel | undefin
   return { at: r.at, source: 'battle', troops: left };
 }
 
-export type AttackBlocker = 'no-camp' | 'no-troops' | 'not-enough';
+export type AttackBlocker = 'no-camp' | 'no-troops' | 'not-enough' | 'lord-busy';
 
-export function attackBlocker(state: GameState, campId: number, troops: Partial<Troops>): AttackBlocker | undefined {
+export function attackBlocker(state: GameState, campId: number, troops: Partial<Troops>, withLord = false): AttackBlocker | undefined {
   if (!state.map.camps.some((c) => c.id === campId)) return 'no-camp';
   if (UNITS.some((u) => !Number.isInteger(troops[u] ?? 0) || (troops[u] ?? 0) < 0)) return 'no-troops';
   if (troopCount(troops) < 1) return 'no-troops';
   if (UNITS.some((u) => (troops[u] ?? 0) > state.troops[u])) return 'not-enough';
+  if (withLord && !lordAvailable(state)) return 'lord-busy';
   return undefined;
 }
 
@@ -112,6 +124,7 @@ export const ATTACK_BLOCKER_TEXT: Record<AttackBlocker, string> = {
   'no-camp': 'That camp no longer exists',
   'no-troops': 'Choose some soldiers to send',
   'not-enough': 'You don’t have that many soldiers at home',
+  'lord-busy': 'Your Lord isn’t at home to lead them',
 };
 
 /** Send soldiers from home to attack a camp. Pure; advance to now first. */
@@ -119,8 +132,9 @@ export function sendAttack(
   state: GameState,
   campId: number,
   troops: Partial<Troops>,
+  withLord = false,
 ): { ok: true; state: GameState; marchId: number } | { ok: false; reason: AttackBlocker } {
-  const blocker = attackBlocker(state, campId, troops);
+  const blocker = attackBlocker(state, campId, troops, withLord);
   if (blocker) return { ok: false, reason: blocker };
   const s = structuredClone(state);
   const camp = s.map.camps.find((c) => c.id === campId)!;
@@ -144,6 +158,7 @@ export function sendAttack(
     recalled: false,
     loot: noLoot(),
     eventId,
+    ...(withLord ? { lord: true } : {}),
   });
   return { ok: true, state: s, marchId: id };
 }
@@ -204,7 +219,10 @@ export const onMarchArrive: EventHandler = (state, event, ctx) => {
   }
 
   const defenders = { ...camp.troops };
-  const result = fight(march.troops, defenders, ctx.rng, {}, { attacker: playerGear(state) });
+  const lordBonus = march.lord ? lordStatus(state).bonus : 0;
+  const attackerGear = march.lord ? withLordBonus(playerGear(state), lordBonus, 'attack') : playerGear(state);
+  const result = fight(march.troops, defenders, ctx.rng, {}, { attacker: attackerGear });
+  const lordNote = march.lord ? awardLordXp(state, result.defenceStrength, result.attackerWon) : undefined;
   camp.troops = result.defenderSurvivors;
   // Experience: survivors learn (more from a close fight), the dead take their share away.
   const promoted = recordBattle(state, march.troops, result.attackerLosses, result.attackerWon, result.defenceStrength / Math.max(1, result.attackStrength));
@@ -232,7 +250,8 @@ export const onMarchArrive: EventHandler = (state, event, ctx) => {
     defendersLost: result.defenderLosses,
     loot,
     capacity,
-    ...promotionNote(promoted),
+    ...notes(promotionNote(promoted), lordNote),
+    ...(march.lord ? { lord: true } : {}),
     attackStrength: Math.round(result.attackStrength),
     defenceStrength: Math.round(result.defenceStrength),
     read: false,
@@ -240,7 +259,14 @@ export const onMarchArrive: EventHandler = (state, event, ctx) => {
   if (state.reports.length > MAX_REPORTS) state.reports.length = MAX_REPORTS;
 
   if (troopCount(march.troops) === 0) {
-    state.marches = state.marches.filter((m) => m.id !== marchId);
+    if (!march.lord) {
+      state.marches = state.marches.filter((m) => m.id !== marchId);
+      return;
+    }
+    // The army fell, but the Lord never dies: the Lord rides home alone.
+    march.phase = 'returning';
+    march.returnAt = event.at + Math.round(LORD_SPEED * distanceFromVillage(camp) * 60) * 1_000;
+    march.eventId = ctx.schedule(march.returnAt, MARCH_RETURN, { marchId });
     return;
   }
   march.phase = 'returning';

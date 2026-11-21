@@ -271,3 +271,11 @@ p.b-note { margin: 6px 0 0; }
 .rank-line[data-rank="3"] { color: #7fc4e8; }
 .rank-line[data-rank="4"] { color: #e8b04a; }
 .promotion { margin: 6px 0 0; font-weight: 600; color: var(--accent); font-size: 0.88rem; }
+
+/* Lord */
+.lord-card { border: 1px solid #b07ad0; }
+.lord-card .meter-fill { background: #b07ad0; }
+.lord-xp { margin: 0 0 6px; }
+.lord-where { margin: 6px 0 0; font-size: 0.85rem; color: var(--accent); }
+.lord-toggle { display: flex; align-items: center; gap: 8px; margin: 4px 0 0; font-size: 0.88rem; font-weight: 600; }
+.lord-toggle input { width: 22px; height: 22px; accent-color: #b07ad0; }
