@@ -21,6 +21,9 @@ export interface CatchUpSummary {
   trained: { unit: UnitId; count: number; label: string }[];
   /** Battles fought while away. */
   battles: { won: number; lost: number };
+  /** Daily resets that happened while away, and today's Warlord if there is one. */
+  resets: number;
+  warlord?: string;
 }
 
 /** Soldiers still to be trained, per unit. */
@@ -43,7 +46,9 @@ export function summarise(before: GameState, after: GameState): CatchUpSummary {
   const seen = new Set(before.reports.map((r) => r.id));
   const fresh = after.reports.filter((r) => !seen.has(r.id));
   const battles = { won: fresh.filter((r) => r.won).length, lost: fresh.filter((r) => !r.won).length };
-  return { awayMs: Math.max(0, after.time - before.time), gained, upgraded, trained, battles };
+  const resets = after.resetsDone - before.resetsDone;
+  const warlord = resets > 0 ? after.map.camps.find((c) => c.kind === 'warlord')?.name : undefined;
+  return { awayMs: Math.max(0, after.time - before.time), gained, upgraded, trained, battles, resets, ...(warlord ? { warlord } : {}) };
 }
 
 /** "3 h 20 min", "2 days 4 h", "45 s". */

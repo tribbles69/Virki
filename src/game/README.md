@@ -7,3 +7,4 @@ The layer between the pure sim and the device: the real clock, storage and files
 - `migrate.ts`: `migrateSave` validates untrusted save data and upgrades old versions. Bump `SAVE_VERSION` in `src/sim/state.ts` and add a step to `MIGRATIONS` whenever the save shape changes.
 - `saveFile.ts`: the export file format (`{ game: 'virki', format, exportedAt, state }`) and its parser.
 - `summary.ts`: "while you were away" summary and duration formatting.
+- `clock.ts`: `localResets(from, to)` lists local 04:00s (device time zone, DST-safe); `catchUp` in `game.ts` queues them before every `advance`.

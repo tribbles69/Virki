@@ -3,6 +3,7 @@ import { production } from './economy';
 import { BUILD_COMPLETE, onBuildComplete } from './build';
 import { RECRUIT_DONE, onRecruitDone } from './recruit';
 import { MARCH_ARRIVE, MARCH_RETURN, onMarchArrive, onMarchReturn } from './march';
+import { DAILY_RESET, onDailyReset } from './daily';
 
 /**
  * The live game's rules. Features add their continuous systems (production)
@@ -15,5 +16,6 @@ export const defaultRules: Rules = {
     [RECRUIT_DONE]: onRecruitDone,
     [MARCH_ARRIVE]: onMarchArrive,
     [MARCH_RETURN]: onMarchReturn,
+    [DAILY_RESET]: onDailyReset,
   },
 };

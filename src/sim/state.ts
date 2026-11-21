@@ -7,7 +7,7 @@ import { generateMap, type WorldMap } from './map';
 import type { BattleReport, March } from './march';
 
 /** Bump when the save shape changes, and add a migration in src/game/migrate.ts. */
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 /** The entire game. Plain JSON-safe data only: it is what gets saved. */
 export interface GameState {
@@ -38,6 +38,12 @@ export interface GameState {
   marches: March[];
   /** Battle results, newest first. */
   reports: BattleReport[];
+  /** Time of the latest daily reset already queued (the app queues them from the device clock). */
+  resetsScheduledUntil: number;
+  /** Local date of the last reset that ran, e.g. "2026-11-22" ('' before the first). */
+  dayKey: string;
+  /** How many daily resets have run. */
+  resetsDone: number;
 }
 
 export interface BuildJob {
@@ -83,5 +89,8 @@ export function newGame(seed: string, now: number): GameState {
     map: generateMap(seed),
     marches: [],
     reports: [],
+    resetsScheduledUntil: now,
+    dayKey: '',
+    resetsDone: 0,
   };
 }

@@ -83,6 +83,7 @@ function welcome(s: CatchUpSummary | undefined, source: StartResult['source']): 
   if (s.trained.length) bits.push(`${s.trained.map((t) => t.label).join(' and ')} trained`);
   const fought = s.battles.won + s.battles.lost;
   if (fought) bits.push(`${fought} battle${fought === 1 ? '' : 's'} fought (${s.battles.won} won)`);
+  if (s.resets) bits.push(`the bandit camps are back${s.warlord ? ` and ${s.warlord} has made camp` : ''}`);
   return `Away for ${formatDuration(s.awayMs)}.${bits.length ? ` ${bits.join(', ')}.` : ''}`;
 }
 
@@ -212,6 +213,11 @@ async function main() {
     const prev = last.recruitQueue[0];
     if (prev && s.recruitQueue.length < last.recruitQueue.length && s.troops[prev.unit] > last.troops[prev.unit]) {
       toast(`${prev.count} ${prev.count === 1 ? UNIT_DATA[prev.unit].name : UNIT_DATA[prev.unit].plural} ready for battle.`);
+    }
+    // A daily reset while the app is open.
+    if (s.resetsDone > last.resetsDone) {
+      const w = s.map.camps.find((c) => c.kind === 'warlord');
+      toast(`A new day: the bandit camps are back${w ? `, and the Warlord ${w.name} has made camp` : ''}.`, 'info', 10_000);
     }
     // Battles fought and armies home since the last update.
     const seen = new Set(last.reports.map((r) => r.id));

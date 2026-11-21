@@ -90,7 +90,7 @@ export class ReportsView {
     const when = new Date(r.at);
     const day = when.toDateString() === new Date(now).toDateString() ? 'Today' : when.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
     const hm = when.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-    d.append(el('p', 'muted small', `${day} at ${hm} · toughness ${r.campTier}/8`));
+    d.append(el('p', 'muted small', `${day} at ${hm} · ${r.campTier > 8 ? 'Warlord camp' : `toughness ${r.campTier}/8`}`));
 
     d.append(this.table('Your army', ['Sent', 'Lost', 'Back'], r.sent, (u) => [r.sent[u], r.lost[u], r.sent[u] - r.lost[u]]));
     const bandits = troopCount(r.defenders);

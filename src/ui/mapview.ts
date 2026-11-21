@@ -2,6 +2,9 @@ import {
   attackBlocker,
   campThreat,
   carryCapacity,
+  isWarlord,
+  nextResetAt,
+  RESET_HOUR,
   distanceFromVillage,
   terrainAt,
   travelTime,
@@ -63,6 +66,7 @@ export class MapView {
   private formSummary?: HTMLElement;
   private formNote?: HTMLElement;
   private sendBtn?: HTMLButtonElement;
+  private resetLine: HTMLElement;
 
   constructor(root: HTMLElement, private handlers: MapHandlers) {
     this.moving = el('section', 'card queue');
@@ -71,6 +75,8 @@ export class MapView {
     this.moving.append(this.movingList);
 
     const card = el('section', 'card map-card');
+    this.resetLine = el('p', 'reset-line');
+    card.append(this.resetLine);
     this.grid = el('div', 'map-grid');
     this.grid.setAttribute('role', 'grid');
     this.grid.style.setProperty('--n', String(MAP_SIZE));
@@ -83,7 +89,9 @@ export class MapView {
       }
     }
     card.append(this.grid);
-    card.append(el('p', 'legend muted small', '\u{1F3E0} your village  ⛺ bandit camp (number = toughness)  \u{1F332} forest  ⛰️ hills'));
+    card.append(
+      el('p', 'legend muted small', '\u{1F3E0} your village  ⛺ bandit camp (number = toughness)  ☠️ daily Warlord  \u{1F332} forest  ⛰️ hills'),
+    );
     this.detail = el('section', 'card');
     root.append(this.moving, card, this.detail);
   }
@@ -128,6 +136,11 @@ export class MapView {
             })();
     this.tiles.forEach((t, i) => t.classList.toggle('selected', i === selIndex));
     this.drawMoving(s, now);
+    const next = nextResetAt(s);
+    this.resetLine.textContent =
+      next !== undefined
+        ? `Camps respawn in ${countdown(next - now)} (${String(RESET_HOUR).padStart(2, '0')}:00)${s.map.camps.some(isWarlord) ? '' : ' · a Warlord arrives with them'}`
+        : '';
     this.drawDetail(s);
   }
 
@@ -185,10 +198,17 @@ export class MapView {
     v.setAttribute('aria-label', 'Your village');
     for (const c of s.map.camps) {
       const t = this.tiles[tileIndex(c.x, c.y)];
-      t.className = 'tile t-grass camp';
-      t.textContent = '⛺';
-      t.dataset.tier = String(c.tier);
-      t.setAttribute('aria-label', `${c.name}, bandit camp, toughness ${c.tier} of 8`);
+      if (isWarlord(c)) {
+        t.className = 'tile t-grass camp warlord';
+        t.textContent = '☠️';
+        t.dataset.tier = 'W';
+        t.setAttribute('aria-label', `${c.name}, Warlord camp, leaves at the next reset`);
+      } else {
+        t.className = 'tile t-grass camp';
+        t.textContent = '⛺';
+        t.dataset.tier = String(c.tier);
+        t.setAttribute('aria-label', `${c.name}, bandit camp, toughness ${c.tier} of 8`);
+      }
     }
   }
 
@@ -219,10 +239,19 @@ export class MapView {
   private drawCamp(s: GameState, camp: Camp) {
     const d = this.detail;
     const head = el('div', 'b-head');
-    head.append(el('h2', 'b-name', camp.name), el('span', 'b-level', `Toughness ${camp.tier}/8`));
+    const warlord = isWarlord(camp);
+    head.append(el('h2', 'b-name', camp.name), el('span', 'b-level', warlord ? 'Warlord' : `Toughness ${camp.tier}/8`));
     d.append(head);
     const dist = distanceFromVillage(camp);
-    d.append(el('p', 'b-effect', `Bandit camp · ${dist.toFixed(1)} tiles away`));
+    d.append(
+      el(
+        'p',
+        'b-effect',
+        warlord
+          ? `Today’s Warlord · ${dist.toFixed(1)} tiles away · moves on at ${String(RESET_HOUR).padStart(2, '0')}:00`
+          : `Bandit camp · ${dist.toFixed(1)} tiles away`,
+      ),
+    );
 
     const emptied = troopCount(camp.troops) === 0;
     const threat = campThreat(s.troops, camp);

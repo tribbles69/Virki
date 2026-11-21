@@ -201,3 +201,9 @@ p.b-note { margin: 6px 0 0; }
 .good { color: #a8d06a; font-weight: 600; }
 .bad { color: var(--bad); }
 .report-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+/* Daily reset & Warlord */
+.reset-line { margin: 2px 4px 8px; font-size: 0.85rem; color: var(--accent); font-variant-numeric: tabular-nums; }
+.reset-line:empty { display: none; }
+.tile.camp.warlord { background: #3a1f3f; box-shadow: inset 0 0 0 2px #b07ad0; }
+.tile.camp.warlord.targeted { box-shadow: inset 0 0 0 2px var(--bad); }

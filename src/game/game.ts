@@ -1,4 +1,5 @@
-import { advance, newGame, type GameState } from '../sim';
+import { advance, newGame, scheduleResets, type GameState } from '../sim';
+import { localResets, RESET_LOOKAHEAD } from './clock';
 import type { SaveStore } from './db';
 import { migrateSave, SaveError } from './migrate';
 import { exportSaveText, parseSaveText } from './saveFile';
@@ -13,6 +14,15 @@ export interface StartResult {
   summary?: CatchUpSummary;
   /** Set when the main save was damaged and the backup (or a new game) was used. */
   warning?: string;
+}
+
+/**
+ * Bring a state up to `now`: first queue any 04:00 resets due (worked out from
+ * the device clock), then let the pure sim run everything in order.
+ */
+export function catchUp(state: GameState, now: number): GameState {
+  const resets = localResets(state.resetsScheduledUntil, now + RESET_LOOKAHEAD);
+  return advance(scheduleResets(state, resets), now);
 }
 
 /** Autosave at most this often while just ticking (actions always save immediately). */
@@ -61,7 +71,7 @@ export class Game {
     else if (warning) warning = `Your save couldn’t be loaded, so a new village was started. (${warning})`;
 
     const before = loaded ?? newGame(newSeed(), now);
-    const state = advance(before, now);
+    const state = catchUp(before, now);
     const game = new Game(state, store, clock);
     await game.save();
     return { game, source, warning, summary: loaded ? summarise(before, state) : undefined };
@@ -69,7 +79,7 @@ export class Game {
 
   /** Bring the state up to the current time. Call on a timer and when the app regains focus. */
   tick(): GameState {
-    this.setState(advance(this._state, this.clock()));
+    this.setState(catchUp(this._state, this.clock()));
     if (this.clock() - this.lastSavedAt >= TICK_SAVE_INTERVAL) void this.save();
     return this._state;
   }
@@ -79,7 +89,7 @@ export class Game {
    * first so it sees current resources, then saves straight away.
    */
   async act<R extends { ok: boolean; state?: GameState }>(command: (s: GameState) => R): Promise<R> {
-    const current = advance(this._state, this.clock());
+    const current = catchUp(this._state, this.clock());
     const result = command(current);
     this.setState(result.ok && result.state ? result.state : current);
     if (result.ok) await this.save();
@@ -89,7 +99,7 @@ export class Game {
   /** Replace the game with an imported save file (after the player confirms). Throws SaveError if invalid. */
   async importText(text: string): Promise<CatchUpSummary> {
     const before = parseSaveText(text);
-    const after = advance(before, this.clock());
+    const after = catchUp(before, this.clock());
     this.setState(after);
     await this.save();
     return summarise(before, after);

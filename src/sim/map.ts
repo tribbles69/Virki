@@ -16,8 +16,10 @@ import { RESOURCES, type ResourceId } from './data/resources';
 import { UNITS, UNIT_DATA, type UnitId } from './data/units';
 
 export interface Camp {
-  /** Stable id, 1..CAMP_COUNT. */
+  /** Stable id: 1..CAMP_COUNT for raider camps, WARLORD_ID for the daily Warlord. */
   id: number;
+  /** Raider camps leave this out; the daily Warlord sets it. */
+  kind?: 'warlord';
   name: string;
   x: number;
   y: number;

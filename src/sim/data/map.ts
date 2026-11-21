@@ -42,7 +42,22 @@ export const CAMP_TIERS: readonly CampTier[] = [
   { troops: { spear: 40, sword: 25, axe: 20 }, loot: 1_400 },
   { troops: { spear: 60, sword: 40, axe: 35 }, loot: 2_200 },
   { troops: { spear: 90, sword: 60, axe: 55 }, loot: 3_500 },
+  // Tier 9: the daily Warlord camp.
+  { troops: { spear: 140, sword: 100, axe: 90 }, loot: 6_000 },
 ];
+
+// ─── Daily reset (DESIGN §7) ──────────────────────────────────────────────
+/** Local hour the camps respawn. */
+export const RESET_HOUR = 4;
+/** Each day's garrisons and loot vary by up to this much either way. */
+export const DAILY_VARIATION = 0.1;
+/** Id and tier of the daily Warlord camp. */
+export const WARLORD_ID = 9;
+export const WARLORD_TIER = 9;
+/** The Warlord pitches camp at least this far from your village. */
+export const WARLORD_MIN_DISTANCE = 4;
+export const WARLORD_TITLES = ['the Red', 'the Cruel', 'Ironhand', 'the Grey', 'Oathbreaker', 'the Wolf', 'Bloodaxe', 'the Hollow'] as const;
+export const WARLORD_NAMES = ['Hrafn', 'Ulfar', 'Skarde', 'Brand', 'Grimkel', 'Thorvald', 'Ketil', 'Asgaut'] as const;
 
 export const RUBBER_BAND_MAX = 3;
 /** Your army attack at which a tier's garrison reaches the top of its band, per tier. */
