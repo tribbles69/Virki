@@ -1,5 +1,6 @@
 import {
   armyDefence,
+  hiddenAmount,
   militia,
   troopCount,
   visibleRaids,
@@ -81,6 +82,8 @@ export class DefenceView {
         ? `Your Watchtower spots raids ${duration(watchtowerWarning(tower))} ahead.`
         : 'Without a Watchtower you won’t see raids coming.',
     ];
+    const hidden = hiddenAmount(s.buildings.hiding);
+    if (hidden > 0) parts.push(`Your Hiding Place keeps ${fullNum(hidden)} of each resource safe from raiders.`);
     if (raids.length > 0 && s.marches.length > 0) parts.push('Armies out on the Map can be recalled to help.');
     if (raids.length === 0) parts.unshift('No raids spotted.');
     this.summary.textContent = parts.join(' ');

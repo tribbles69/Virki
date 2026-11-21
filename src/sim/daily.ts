@@ -117,6 +117,7 @@ export const onDailyReset: EventHandler = (state, event) => {
   state.map.camps = camps;
   state.dayKey = dayKey;
   state.resetsDone += 1;
+  state.lastResetAt = event.at;
   rollRaids(state, event.at, rng);
 };
 

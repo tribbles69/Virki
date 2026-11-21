@@ -15,6 +15,7 @@ import {
   type Raid,
   type ResetTime,
   type Troops,
+  noTroops,
 } from '../src/sim';
 import { migrateSave } from '../src/game/migrate';
 import { summarise } from '../src/game/summary';
@@ -24,7 +25,7 @@ const HOUR = 60 * MIN;
 const DAY = 24 * HOUR;
 const T0 = Date.UTC(2026, 10, 21, 12);
 
-const army = (t: Partial<Troops>): Troops => ({ spear: 0, sword: 0, axe: 0, ...t });
+const army = (t: Partial<Troops>): Troops => ({ ...noTroops(), ...t }) as Troops;
 
 /** A village with a Barracks, advanced through `days` resets (resets at T0 + n·DAY − 8 h). */
 function village(levels: Partial<GameState['buildings']> = {}, seed = 'raid'): GameState {

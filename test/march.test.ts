@@ -17,13 +17,14 @@ import {
   SAVE_VERSION,
   type GameState,
   type Troops,
+  noTroops,
 } from '../src/sim';
 import { migrateSave } from '../src/game/migrate';
 
 const MIN = 60_000;
 const T0 = Date.UTC(2026, 10, 21, 12);
 
-const army = (t: Partial<Troops>): Troops => ({ spear: 0, sword: 0, axe: 0, ...t });
+const army = (t: Partial<Troops>): Troops => ({ ...noTroops(), ...t }) as Troops;
 
 /** A village with soldiers at home and camp 1 set to a known garrison. */
 const game = (troops: Partial<Troops>, camp1: Partial<Troops> = { spear: 3 }): GameState => {

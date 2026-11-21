@@ -55,7 +55,7 @@ export function recruitInfo(state: GameState, unit: UnitId): RecruitInfo {
   const missing = missingFor(state, unit);
   const locked = Object.keys(missing).length > 0;
   const inTraining = state.recruitQueue.filter((b) => b.unit === unit).reduce((n, b) => n + b.count - b.trained, 0);
-  const full = state.recruitQueue.length >= RECRUIT_QUEUE_SLOTS;
+  const full = queueFor(state, def.building).length >= RECRUIT_QUEUE_SLOTS;
   return {
     unit,
     name: def.name,
@@ -71,7 +71,7 @@ export function recruitInfo(state: GameState, unit: UnitId): RecruitInfo {
 export function recruitBlocker(state: GameState, unit: UnitId, count: number): RecruitBlocker | undefined {
   const def = UNIT_DATA[unit];
   if (Object.keys(missingFor(state, unit)).length > 0) return 'locked';
-  if (state.recruitQueue.length >= RECRUIT_QUEUE_SLOTS) return 'queue-full';
+  if (queueFor(state, def.building).length >= RECRUIT_QUEUE_SLOTS) return 'queue-full';
   if (!Number.isInteger(count) || count < 1) return 'bad-count';
   if (count * def.pop > population(state).free) return 'population';
   if (RESOURCES.some((r) => count * def.cost[r] > state.resources[r])) return 'resources';
@@ -85,7 +85,7 @@ export function recruitBlockerText(state: GameState, unit: UnitId, blocker: Recr
         .map(([b, l]) => `${BUILDING_DATA[b as BuildingId].name} level ${l}`)
         .join(', ')}`;
     case 'queue-full':
-      return `Training queue is full (${RECRUIT_QUEUE_SLOTS} batches)`;
+      return `${BUILDING_DATA[UNIT_DATA[unit].building].name} queue is full (${RECRUIT_QUEUE_SLOTS} batches)`;
     case 'bad-count':
       return 'Choose how many to train';
     case 'population':
@@ -95,6 +95,11 @@ export function recruitBlockerText(state: GameState, unit: UnitId, blocker: Recr
         ? 'Too costly for your Warehouse'
         : 'Not enough resources';
   }
+}
+
+/** Batches trained by one building, in the order they'll train. Each building works through its own queue alongside the others. */
+export function queueFor(state: GameState, building: 'barracks' | 'stable'): RecruitBatch[] {
+  return state.recruitQueue.filter((b) => UNIT_DATA[b.unit].building === building);
 }
 
 /** Start the first soldier of a batch training at `at`. */
@@ -126,7 +131,7 @@ export function recruit(state: GameState, unit: UnitId, count: number): RecruitR
     eventId: 0,
   };
   s.recruitQueue.push(batch);
-  if (s.recruitQueue.length === 1) activate(s, batch, s.time);
+  if (queueFor(s, def.building).length === 1) activate(s, batch, s.time);
   return { ok: true, state: s };
 }
 
@@ -137,38 +142,44 @@ export function recruit(state: GameState, unit: UnitId, count: number): RecruitR
 export function cancelRecruit(state: GameState, index: number): { ok: true; state: GameState } | { ok: false } {
   if (!Number.isInteger(index) || index < 0 || index >= state.recruitQueue.length) return { ok: false };
   const s = structuredClone(state);
+  const building = UNIT_DATA[s.recruitQueue[index].unit].building;
+  const wasTraining = queueFor(s, building)[0] === s.recruitQueue[index];
   const [batch] = s.recruitQueue.splice(index, 1);
   const left = batch.count - batch.trained;
   for (const r of RESOURCES) s.resources[r] += left * batch.paidEach[r as ResourceId];
-  if (index === 0) {
+  if (wasTraining) {
     cancel(s, batch.eventId);
-    if (s.recruitQueue.length > 0) activate(s, s.recruitQueue[0], s.time);
+    const next = queueFor(s, building)[0];
+    if (next) activate(s, next, s.time);
   }
   return { ok: true, state: s };
 }
 
-/** When each batch will be finished, in queue order. */
+/** When each batch will be finished, in queue order (each building's queue runs on its own). */
 export function batchEndTimes(state: GameState): number[] {
-  const out: number[] = [];
-  let t = 0;
-  state.recruitQueue.forEach((b, i) => {
+  const last: Partial<Record<string, number>> = {};
+  return state.recruitQueue.map((b) => {
+    const building = UNIT_DATA[b.unit].building;
     const remaining = b.count - b.trained;
-    t = i === 0 ? b.nextAt + (remaining - 1) * b.perUnit : t + remaining * b.perUnit;
-    out.push(t);
+    const prev = last[building];
+    const end = prev === undefined ? b.nextAt + (remaining - 1) * b.perUnit : prev + remaining * b.perUnit;
+    last[building] = end;
+    return end;
   });
-  return out;
 }
 
 /** Event: one soldier finished training. */
 export const onRecruitDone: EventHandler = (state, event) => {
-  const batch = state.recruitQueue[0];
-  if (!batch || batch.eventId !== event.id) return; // stale (batch was cancelled)
+  const batch = state.recruitQueue.find((b) => b.eventId === event.id);
+  if (!batch) return; // stale (batch was cancelled)
   state.troops[batch.unit] += 1;
   batch.trained += 1;
   if (batch.trained < batch.count) {
     activate(state, batch, event.at);
   } else {
-    state.recruitQueue.shift();
-    if (state.recruitQueue.length > 0) activate(state, state.recruitQueue[0], event.at);
+    const building = UNIT_DATA[batch.unit].building;
+    state.recruitQueue = state.recruitQueue.filter((b) => b !== batch);
+    const next = queueFor(state, building)[0];
+    if (next) activate(state, next, event.at);
   }
 };

@@ -1,5 +1,7 @@
 import {
   attackBlocker,
+  campIntel,
+  isScoutingParty,
   campThreat,
   carryCapacity,
   isWarlord,
@@ -23,7 +25,7 @@ import {
   type Troops,
   type UnitId,
 } from '../sim';
-import { clockTime, countdown, duration, fullNum, shortNum } from './format';
+import { ago, clockTime, countdown, duration, fullNum, shortNum } from './format';
 
 const RES_ICON = { wood: '\u{1FAB5}', stone: '\u{1FAA8}', ore: '⛏️' } as const;
 const TERRAIN_ICON: Record<string, string> = { f: '\u{1F332}', h: '⛰️', w: '', '.': '' };
@@ -216,7 +218,9 @@ export class MapView {
     // Only rebuild when something shown would change (not every tick).
     const sel = this.selected;
     const camp = sel.kind === 'camp' ? s.map.camps.find((c) => c.id === sel.id) : undefined;
-    const sig = JSON.stringify([sel, s.troops, camp ?? null]);
+    const intel = camp ? campIntel(s, camp.id) : undefined;
+    // Minute granularity for the "scouted N min ago" line.
+    const sig = JSON.stringify([sel, s.troops, camp ?? null, intel ?? null, Math.floor(s.time / 60_000)]);
     if (sig === this.detailSig) return;
     this.detailSig = sig;
     const d = this.detail;
@@ -257,9 +261,22 @@ export class MapView {
     const threat = campThreat(s.troops, camp);
     d.append(el('p', `threat threat-${emptied ? 'easy' : threat}`, emptied ? 'Cleared: no bandits left' : THREAT_TEXT[threat]));
 
+    // Exact numbers if you've scouted (or fought) here since the camps last respawned.
+    const intel = campIntel(s, camp.id);
+    if (intel) {
+      const box = el('div', 'intel');
+      const who = troopCount(intel.troops) === 0 ? 'no bandits' : groupLabel(intel.troops);
+      box.append(
+        el('p', 'intel-head', `${intel.source === 'scout' ? 'Scouted' : 'Seen after your attack'} ${ago(s.time - intel.at)}`),
+        el('p', 'intel-body', `Bandits: ${who}`),
+      );
+      d.append(box);
+    }
+
     const loot = el('div', 'b-costs');
-    loot.append(el('span', 'muted', emptied ? 'Loot left' : 'Loot about'));
-    for (const r of RESOURCES) loot.append(el('span', 'cost', `${RES_ICON[r]} ${shortNum(camp.loot[r])}`));
+    const exactLoot = intel?.loot;
+    loot.append(el('span', 'muted', exactLoot ? 'Loot (scouted)' : emptied ? 'Loot left' : 'Loot about'));
+    for (const r of RESOURCES) loot.append(el('span', 'cost', `${RES_ICON[r]} ${shortNum((exactLoot ?? camp.loot)[r])}`));
     d.append(loot);
 
     // Attack form
@@ -327,13 +344,17 @@ export class MapView {
     const troops = this.draftTroops();
     const n = troopCount(troops);
     const blocker = attackBlocker(this.last, camp.id, troops);
+    const scouting = isScoutingParty(troops);
     if (n > 0 && Number.isFinite(n)) {
       const t = travelTime(troops, distanceFromVillage(camp));
-      this.formSummary.textContent = `${fullNum(n)} soldier${n === 1 ? '' : 's'} · carry ${fullNum(carryCapacity(troops))} · arrive in ${duration(t)}`;
+      this.formSummary.textContent = scouting
+        ? `Scouting mission · ${fullNum(n)} scout${n === 1 ? '' : 's'} · no fighting · arrive in ${duration(t)}`
+        : `${fullNum(n)} soldier${n === 1 ? '' : 's'} · carry ${fullNum(carryCapacity(troops))} · arrive in ${duration(t)}`;
     } else {
       this.formSummary.textContent = '';
     }
     this.formNote.textContent = blocker && n > 0 ? ATTACK_BLOCKER_TEXT[blocker] : '';
     this.sendBtn.disabled = !!blocker;
+    this.sendBtn.textContent = scouting ? 'Send scouts' : 'Send attack';
   }
 }

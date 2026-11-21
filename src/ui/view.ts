@@ -12,7 +12,7 @@ import {
   type GameState,
 } from '../sim';
 import { effectLine } from './effects';
-import { clockTime, countdown, duration, fullNum, shortNum } from './format';
+import { clockTime, compactNum, countdown, duration, fullNum, shortNum } from './format';
 import { wallArt } from './wallart';
 import { wallEra } from '../sim';
 
@@ -141,14 +141,15 @@ export class VillageView {
     const cap = storageCap(s);
     for (const r of RESOURCES) {
       const v = this.res[r];
-      v.amount.textContent = shortNum(s.resources[r]);
+      v.amount.textContent = compactNum(s.resources[r]);
+      v.amount.title = `${RESOURCE_NAMES[r]}: ${fullNum(s.resources[r])}`;
       v.fill.style.width = `${Math.min(100, (s.resources[r] / cap) * 100)}%`;
       const full = s.resources[r] >= cap;
       v.box.classList.toggle('full', full);
       v.rate.textContent = full ? 'Full' : `+${shortNum(productionPerHour(s, r))}/h`;
     }
     const p = population(s);
-    this.pop.textContent = shortNum(p.used);
+    this.pop.textContent = compactNum(p.used);
     this.popCap.textContent = `of ${shortNum(p.cap)}`;
     this.popCap.parentElement!.title = `Population: ${fullNum(p.used)} of ${fullNum(p.cap)} (${fullNum(p.free)} free)`;
 

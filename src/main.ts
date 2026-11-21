@@ -42,7 +42,7 @@ app.innerHTML = `
     <div id="bar"></div>
     <nav class="tabs" role="tablist">
       <button class="tab" role="tab" data-tab="village">Village</button>
-      <button class="tab" role="tab" data-tab="barracks">Barracks</button>
+      <button class="tab" role="tab" data-tab="barracks">Army</button>
       <button class="tab" role="tab" data-tab="map">Map</button>
       <button class="tab" role="tab" data-tab="reports">Reports<span class="badge" id="unread" hidden></span></button>
     </nav>

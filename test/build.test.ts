@@ -156,7 +156,7 @@ describe('building', () => {
     expect(advance(reloaded, T0 + HOUR).buildings.farm).toBe(2);
   });
 
-  it('lists every building for the UI; the starting six are ready to build', () => {
+  it('lists every building for the UI; the starting seven are ready to build', () => {
     const list = allUpgrades(game());
     expect(list.map((u) => u.name)).toEqual([
       'Great Hall',
@@ -165,11 +165,13 @@ describe('building', () => {
       'Farm',
       'Mine',
       'Warehouse',
+      'Hiding Place',
       'Barracks',
+      'Stable',
       'Wall',
       'Watchtower',
     ]);
-    expect(list.slice(0, 6).every((u) => u.blocker === undefined)).toBe(true);
+    expect(list.slice(0, 7).every((u) => u.blocker === undefined)).toBe(true);
   });
 
   it('the Barracks needs Great Hall level 3', () => {

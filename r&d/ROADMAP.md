@@ -20,7 +20,7 @@ Work down this list in order. When Aaron says "go", pick up the first unchecked 
 - [x] Daily reset at 04:00 local, seeded camp respawn, daily Warlord camp
 - [x] Wall (with era art placeholders) and Watchtower
 - [x] Bandit raids on the player with warning time
-- [ ] Hiding Place, Stable + cavalry, Scouts
+- [x] Hiding Place, Stable + cavalry, Scouts
 
 ## v0.4 — Steel and craft
 - [ ] Smithy: craft-tier research for weapon and armour tracks per unit
