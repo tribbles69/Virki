@@ -1,3 +1,4 @@
+import { defenceAgainst } from './battle';
 import { deriveSeed, Rng } from './rng';
 import {
   CAMP_COUNT,
@@ -59,14 +60,14 @@ export function travelTime(units: Partial<Record<UnitId, number>>, tiles: number
   return Math.round(slowest * tiles * 60) * 1_000;
 }
 
-/** Total attack of a group (all classes added for now). */
+/** Total attack of a group, all classes added (scouts add nothing). */
 export function armyAttack(troops: Partial<Record<UnitId, number>>): number {
   let total = 0;
   for (const u of UNITS) total += (troops[u] ?? 0) * UNIT_DATA[u].attack;
   return total;
 }
 
-/** Defence of a group against infantry (all current units are infantry). */
+/** Defence of a group against infantry (bandits only send infantry). */
 export function armyDefence(troops: Partial<Record<UnitId, number>>): number {
   let total = 0;
   for (const u of UNITS) total += (troops[u] ?? 0) * UNIT_DATA[u].defence.infantry;
@@ -173,7 +174,8 @@ export type Threat = 'no-army' | 'easy' | 'fair' | 'risky' | 'deadly';
 export function campThreat(homeTroops: Partial<Record<UnitId, number>>, camp: Camp): Threat {
   const attack = armyAttack(homeTroops);
   if (attack <= 0) return 'no-army';
-  const ratio = attack / Math.max(1, armyDefence(camp.troops));
+  // Weighted by your mix: bandit Spearmen hold well against cavalry, Swordsmen against infantry.
+  const ratio = attack / Math.max(1, defenceAgainst(homeTroops, camp.troops));
   if (ratio >= 2) return 'easy';
   if (ratio >= 1.2) return 'fair';
   if (ratio >= 0.8) return 'risky';

@@ -97,8 +97,8 @@ describe('population', () => {
   it('starts with room to grow', () => {
     const p = population(game());
     expect(p.cap).toBe(240);
-    expect(p.used).toBe(30); // hall 5 + woodcutter 5 + quarry 10 + mine 10
-    expect(p.free).toBe(210);
+    expect(p.used).toBe(32); // hall 5 + woodcutter 5 + quarry 10 + mine 10 + hiding place 2
+    expect(p.free).toBe(208);
   });
 
   it('a farm level matched to the other buildings always fits them, up to L100', () => {

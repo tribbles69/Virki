@@ -58,7 +58,7 @@ export class ReportsView {
       const summary = el('button', 'report-summary');
       summary.setAttribute('aria-expanded', String(this.openId === r.id));
       const line1 = el('div', 'report-line');
-      const badge = r.kind === 'raid' ? (r.won ? 'Held' : 'Raided') : r.won ? 'Victory' : 'Defeat';
+      const badge = r.kind === 'scout' ? 'Scouted' : r.kind === 'raid' ? (r.won ? 'Held' : 'Raided') : r.won ? 'Victory' : 'Defeat';
       const title = r.kind === 'raid' ? `Raid by ${r.campName}` : r.campName;
       line1.append(el('span', 'report-badge', badge), el('span', 'report-camp', title));
       const when = el('span', 'report-when');
@@ -82,6 +82,10 @@ export class ReportsView {
     const sent = troopCount(r.sent);
     const lost = troopCount(r.lost);
     const loot = RESOURCES.reduce((n, k) => n + r.loot[k], 0);
+    if (r.kind === 'scout') {
+      const seen = RESOURCES.reduce((n, k) => n + (r.seenLoot?.[k] ?? 0), 0);
+      return `${fullNum(troopCount(r.defenders))} bandits · ${fullNum(seen)} loot in camp`;
+    }
     if (r.kind === 'raid') {
       const yours = troopCount(r.defendersLost);
       const fell = yours === 0 ? 'no soldiers lost' : `${fullNum(yours)} soldiers lost`;
@@ -99,6 +103,7 @@ export class ReportsView {
     const hm = when.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     d.append(el('p', 'muted small', `${day} at ${hm} · ${r.campTier > 8 ? 'Warlord camp' : `toughness ${r.campTier}/8`}`));
     if (r.kind === 'raid') return this.raidDetail(d, r);
+    if (r.kind === 'scout') return this.scoutDetail(d, r);
 
     d.append(this.table('Your army', ['Sent', 'Lost', 'Back'], r.sent, (u) => [r.sent[u], r.lost[u], r.sent[u] - r.lost[u]]));
     const bandits = troopCount(r.defenders);
@@ -138,6 +143,34 @@ export class ReportsView {
       this.handlers.remove(r.id);
     });
     actions.append(again, del);
+    d.append(actions);
+    return d;
+  }
+
+  /** What your scouts saw. */
+  private scoutDetail(d: HTMLElement, r: BattleReport): HTMLElement {
+    if (troopCount(r.defenders) > 0) {
+      d.append(this.table('Bandits in camp', ['Count'], r.defenders, (u) => [r.defenders[u]]));
+    } else {
+      d.append(el('p', 'b-effect', 'The camp was empty: no bandits at all.'));
+    }
+    const loot = el('div', 'b-costs');
+    loot.append(el('span', 'muted', 'Loot in camp'));
+    for (const k of RESOURCES) loot.append(el('span', 'cost', `${RES_ICON[k]} ${fullNum(r.seenLoot?.[k] ?? 0)}`));
+    d.append(loot);
+    d.append(el('p', 'muted small', 'Exact until the camps respawn at 04:00 (or until someone else fights there).'));
+    const actions = el('div', 'report-actions');
+    if (r.campTier <= 9) {
+      const go = el('button', 'upgrade small-btn', 'Plan an attack');
+      go.addEventListener('click', () => this.handlers.attackAgain(r.campId));
+      actions.append(go);
+    }
+    const del = el('button', 'ghost small-btn', 'Delete');
+    del.addEventListener('click', () => {
+      this.openId = null;
+      this.handlers.remove(r.id);
+    });
+    actions.append(del);
     d.append(actions);
     return d;
   }

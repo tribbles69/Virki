@@ -48,3 +48,10 @@ export const WATCHTOWER_WARNING: Curve = {
   atZero: 0,
   segments: [{ upTo: 30, r: 1.159 }],
 };
+
+/** Resources of each kind the Hiding Place keeps safe from raiders: L1 = 150, L10 ≈ 1,600, L30 ≈ 300k. */
+export const HIDING_CAPACITY: Curve = {
+  base: 150,
+  atZero: 0,
+  segments: [{ upTo: 30, r: 1.3 }],
+};

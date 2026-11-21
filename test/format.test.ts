@@ -27,3 +27,15 @@ describe('UI formatting', () => {
     expect(duration(74 * 3_600_000)).toBe('3 days 2 h');
   });
 });
+
+describe('compactNum (resource bar)', () => {
+  it('fits a phone-width box', async () => {
+    const { compactNum } = await import('../src/ui/format');
+    expect(compactNum(9_999)).toBe('9,999');
+    expect(compactNum(19_999)).toBe('19.9k');
+    expect(compactNum(20_000)).toBe('20k');
+    expect(compactNum(395_371)).toBe('395k');
+    expect(compactNum(2_270_809)).toBe('2.27M');
+    expect(compactNum(71_000_000)).toBe('71M');
+  });
+});

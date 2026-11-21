@@ -8,6 +8,7 @@ import {
   sendAttack,
   unreadReports,
   type GameState,
+  noTroops,
 } from '../src/sim';
 import { migrateSave } from '../src/game/migrate';
 import { ago } from '../src/ui/format';
@@ -19,7 +20,7 @@ const T0 = Date.UTC(2026, 10, 21, 12);
 function afterThreeBattles(): GameState {
   let s = newGame('reports', T0);
   s.buildings.farm = 10;
-  s.troops = { spear: 0, sword: 0, axe: 30 };
+  s.troops = { ...noTroops(), axe: 30 };
   for (let i = 0; i < 3; i++) {
     const r = sendAttack(s, 1, { axe: 10 });
     if (!r.ok) throw new Error(r.reason);

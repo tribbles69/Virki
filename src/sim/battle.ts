@@ -23,7 +23,11 @@ export function troopCount(t: Partial<Troops>): number {
  */
 export function defenceAgainst(attackers: Partial<Troops>, defenders: Partial<Troops>): number {
   const attackByClass = { infantry: 0, cavalry: 0, archer: 0 };
-  for (const u of UNITS) attackByClass.infantry += (attackers[u] ?? 0) * UNIT_DATA[u].attack;
+  for (const u of UNITS) {
+    const cls = UNIT_DATA[u].cls;
+    if (cls === 'scout') continue; // scouts don't fight
+    attackByClass[cls] += (attackers[u] ?? 0) * UNIT_DATA[u].attack;
+  }
   const total = attackByClass.infantry + attackByClass.cavalry + attackByClass.archer;
   if (total <= 0) return 0;
   let defence = 0;

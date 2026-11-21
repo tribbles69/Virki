@@ -17,6 +17,7 @@ import {
   WARLORD_MIN_DISTANCE,
   type GameState,
   type ResetTime,
+  noTroops,
 } from '../src/sim';
 import { catchUp, Game } from '../src/game/game';
 import { localDayKey, localResets } from '../src/game/clock';
@@ -75,7 +76,7 @@ describe('the reset', () => {
   it('refills camps that were cleared and puts a Warlord on the map', () => {
     let s = newGame('reset', T0);
     s.buildings.farm = 10;
-    s.troops = { spear: 0, sword: 0, axe: 50 };
+    s.troops = { ...noTroops(), axe: 50 };
     const r = sendAttack(s, 1, { axe: 50 });
     if (!r.ok) throw new Error(r.reason);
     s = advance(r.state, T0 + 2 * HOUR);
@@ -118,7 +119,7 @@ describe('the reset', () => {
     const weak = advance(withResets(newGame('band', T0), 1), T0 + DAY);
     let strong = newGame('band', T0);
     strong.buildings.farm = 15;
-    strong.troops = { spear: 0, sword: 0, axe: 100 }; // 4,000 attack
+    strong.troops = { ...noTroops(), axe: 100 }; // 4,000 attack
     const r = sendAttack(strong, 8, { axe: 60 });
     if (!r.ok) throw new Error();
     strong = advance(withResets(r.state, 1), T0 + DAY);

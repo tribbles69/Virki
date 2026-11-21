@@ -54,3 +54,12 @@ export function ago(ms: number): string {
   const d = Math.floor(h / 24);
   return `${d} day${d === 1 ? '' : 's'} ago`;
 }
+
+/** Tight version for the resource bar: 9,999 then 19.9k, 199k, 1.25M. */
+export function compactNum(n: number): string {
+  const v = Math.floor(n);
+  if (v < 10_000) return v.toLocaleString('en-GB');
+  if (v < 100_000) return `${(Math.floor(v / 100) / 10).toFixed(1).replace(/\.0$/, '')}k`;
+  if (v < 1_000_000) return `${Math.floor(v / 1_000)}k`;
+  return `${(Math.floor(v / 10_000) / 100).toFixed(2).replace(/\.?0+$/, '')}M`;
+}

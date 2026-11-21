@@ -7,6 +7,7 @@ import {
   WALL_FAST_STEP,
   WALL_SLOW_STEP,
   WATCHTOWER_WARNING,
+  HIDING_CAPACITY,
 } from './data/defence';
 
 /** The village's own militia defence (before the wall multiplier). */
@@ -41,4 +42,9 @@ export function wallEra(level: number): WallEra | undefined {
 /** Milliseconds of warning before a raid lands, by Watchtower level (0 = none). Whole seconds. */
 export function watchtowerWarning(level: number): number {
   return Math.round(curveValue(WATCHTOWER_WARNING, level) * 60) * 1_000;
+}
+
+/** Of each resource, how much the Hiding Place keeps safe from raiders. */
+export function hiddenAmount(hidingLevel: number): number {
+  return Math.round(curveValue(HIDING_CAPACITY, hidingLevel));
 }

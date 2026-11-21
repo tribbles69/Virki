@@ -5,6 +5,7 @@ import {
   recruitInfo,
   upgradeInfo,
   blockerText,
+  BUILDING_DATA,
   RESOURCES,
   RESOURCE_NAMES,
   UNITS,
@@ -78,8 +79,15 @@ export class BarracksView {
     this.body.append(this.queue);
 
     const list = el('section', 'buildings');
+    let lastBuilding = '';
     for (const u of UNITS) {
       const def = UNIT_DATA[u];
+      if (def.building !== lastBuilding) {
+        lastBuilding = def.building;
+        const heading = el('h2', 'group-head', BUILDING_DATA[def.building].name);
+        list.append(heading);
+        this.groupHeads[def.building] = heading;
+      }
       const card = el('article', 'card building');
       const head = el('div', 'b-head');
       head.append(el('h2', 'b-name', def.name));
@@ -140,6 +148,7 @@ export class BarracksView {
   }
 
   private last?: GameState;
+  private groupHeads: Partial<Record<string, HTMLElement>> = {};
 
   update(s: GameState, now: number): void {
     this.last = s;
@@ -160,17 +169,25 @@ export class BarracksView {
     const army = UNITS.filter((u) => s.troops[u] > 0).map((u) => `${fullNum(s.troops[u])} ${s.troops[u] === 1 ? UNIT_DATA[u].name : UNIT_DATA[u].plural}`);
     this.army.textContent = army.length ? army.join(' · ') : 'No soldiers yet.';
 
+    const stableHead = this.groupHeads.stable;
+    if (stableHead) {
+      const lvl = s.buildings.stable;
+      stableHead.textContent = lvl > 0 ? `Stable · level ${lvl}` : 'Stable · not built yet';
+    }
+    const barracksHead = this.groupHeads.barracks;
+    if (barracksHead) barracksHead.textContent = `Barracks · level ${s.buildings.barracks}`;
+
     this.updateQueue(s, now);
     for (const u of UNITS) this.updateCard(s, u);
   }
 
   private updateQueue(s: GameState, now: number) {
     this.queue.hidden = s.recruitQueue.length === 0;
-    const sig = s.recruitQueue.map((b) => `${b.unit}:${b.count}`).join('|');
+    const sig = s.recruitQueue.map((b) => `${b.unit}:${b.count}:${b.nextAt > 0 ? 1 : 0}`).join('|');
     if (sig !== this.queueSig) {
       this.queueSig = sig;
       this.queueList.replaceChildren();
-      this.queueRows = s.recruitQueue.map((_, i) => {
+      this.queueRows = s.recruitQueue.map((b, i) => {
         const row = el('div', 'qrow');
         const head = el('div', 'queue-head');
         const title = el('div', 'queue-title');
@@ -178,7 +195,8 @@ export class BarracksView {
         head.append(title, time);
         row.append(head);
         let fill: HTMLElement | undefined;
-        if (i === 0) {
+        // Each building trains its own first batch at the same time as the other.
+        if (b.nextAt > 0) {
           const meter = el('div', 'meter big');
           fill = el('div', 'meter-fill');
           meter.append(fill);
@@ -198,7 +216,7 @@ export class BarracksView {
       const def = UNIT_DATA[b.unit];
       const left = b.count - b.trained;
       r.title.textContent = `${b.count} ${b.count === 1 ? def.name : def.plural}${b.trained ? ` (${b.trained} ready)` : ''}`;
-      if (i === 0) {
+      if (b.nextAt > 0 && r.fill) {
         r.time.textContent = `next ${countdown(b.nextAt - now)} · all ${countdown(ends[i] - now)}`;
         r.fill!.style.width = `${Math.min(100, Math.max(0, ((now - (b.nextAt - b.perUnit)) / b.perUnit) * 100))}%`;
       } else {

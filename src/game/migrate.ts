@@ -28,6 +28,8 @@ export const MIGRATIONS: Record<number, Migration> = {
   4: (s) => ({ ...s, version: 5, resetsScheduledUntil: s.time, dayKey: '', resetsDone: 0 }),
   // v0.3: bandit raids on the village.
   5: (s) => ({ ...s, version: 6, raids: [] }),
+  // v0.3: Stable, cavalry and scouts (new units and buildings fill themselves in); scouting intel needs the last reset time.
+  6: (s) => ({ ...s, version: 7, lastResetAt: 0 }),
 };
 
 export class SaveError extends Error {}
@@ -141,5 +143,6 @@ function normalise(s: Record<string, unknown>): GameState {
     dayKey: typeof s.dayKey === 'string' ? s.dayKey : '',
     resetsDone: isNum(s.resetsDone) ? s.resetsDone : 0,
     raids: s.raids as GameState['raids'],
+    lastResetAt: isNum(s.lastResetAt) ? s.lastResetAt : 0,
   };
 }

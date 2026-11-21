@@ -47,7 +47,7 @@ export function summarise(before: GameState, after: GameState): CatchUpSummary {
     .map((t) => ({ ...t, label: `${t.count} ${t.count === 1 ? UNIT_DATA[t.unit].name : UNIT_DATA[t.unit].plural}` }));
   const seen = new Set(before.reports.map((r) => r.id));
   const fresh = after.reports.filter((r) => !seen.has(r.id));
-  const attacks = fresh.filter((r) => r.kind !== 'raid');
+  const attacks = fresh.filter((r) => r.kind === undefined);
   const defences = fresh.filter((r) => r.kind === 'raid');
   const battles = { won: attacks.filter((r) => r.won).length, lost: attacks.filter((r) => !r.won).length };
   const raids = { held: defences.filter((r) => r.won).length, lost: defences.filter((r) => !r.won).length };

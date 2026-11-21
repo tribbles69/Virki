@@ -13,6 +13,7 @@ import {
   RUBBER_BAND_MAX,
   SAVE_VERSION,
   VILLAGE_POS,
+  noTroops,
 } from '../src/sim';
 import { migrateSave } from '../src/game/migrate';
 
@@ -71,7 +72,7 @@ describe('map generation', () => {
 
 describe('rubber band', () => {
   it('garrisons grow with your army, but only up to 3× the base', () => {
-    expect(campGarrison(1, 0)).toEqual({ spear: 3, sword: 0, axe: 0 });
+    expect(campGarrison(1, 0)).toEqual({ ...noTroops(), spear: 3 });
     expect(campGarrison(1, 400).spear).toBe(6);
     expect(campGarrison(1, 1_000_000).spear).toBe(3 * RUBBER_BAND_MAX);
     expect(campGarrison(8, 400).spear).toBeLessThan(campGarrison(8, 1_000_000).spear);

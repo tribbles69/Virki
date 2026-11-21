@@ -2,7 +2,7 @@ import { carryCapacity, fight, takeLoot, type Troops } from './battle';
 import { RAID_SHARE, RAID_TIER_WEIGHTS, RAID_WINDOW_HOURS, RAIDS_NEED_BARRACKS, RAIDS_PER_DAY } from './data/defence';
 import { RESOURCES, type ResourceId } from './data/resources';
 import { UNITS } from './data/units';
-import { militia, wallMultiplier, watchtowerWarning } from './defence';
+import { hiddenAmount, militia, wallMultiplier, watchtowerWarning } from './defence';
 import { schedule } from './events';
 import { distanceFromVillage, travelTime } from './map';
 import { MAX_REPORTS } from './march';
@@ -83,7 +83,11 @@ export const onRaidArrive: EventHandler = (state, event, ctx) => {
   let stolen = Object.fromEntries(RESOURCES.map((r) => [r, 0])) as Record<ResourceId, number>;
   const capacity = carryCapacity(result.attackerSurvivors);
   if (result.attackerWon) {
-    stolen = takeLoot(state.resources, capacity);
+    // The Hiding Place keeps some of each resource out of reach.
+    const hidden = hiddenAmount(state.buildings.hiding);
+    const exposed = { ...state.resources };
+    for (const k of RESOURCES) exposed[k] = Math.max(0, state.resources[k] - hidden);
+    stolen = takeLoot(exposed, capacity);
     for (const r of RESOURCES) state.resources[r] = Math.max(0, state.resources[r] - stolen[r]);
   }
 

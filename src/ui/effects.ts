@@ -10,6 +10,8 @@ import {
   RESOURCE_NAMES,
   wallMultiplier,
   watchtowerWarning,
+  hiddenAmount,
+  STABLE_SPEED,
   type BuildingId,
   type GameState,
 } from '../sim';
@@ -54,6 +56,18 @@ export function effectLine(state: GameState, b: BuildingId, nextLevel: number, m
         ? `Trains soldiers ${(1 / now).toFixed(1)}× faster`
         : `Trains soldiers ${Math.max(1, Math.round((now / then - 1) * 100))}% faster next level`;
     }
+    case 'stable': {
+      if (nextLevel === 1) return 'Trains Scouts, Light and Heavy Cavalry';
+      const now = curveValue(STABLE_SPEED, s.buildings.stable);
+      const then = curveValue(STABLE_SPEED, nextLevel);
+      return maxed
+        ? `Trains cavalry ${(1 / now).toFixed(1)}× faster`
+        : `Trains cavalry ${Math.max(1, Math.round((now / then - 1) * 100))}% faster next level`;
+    }
+    case 'hiding':
+      return maxed
+        ? `Hides ${fullNum(hiddenAmount(s.buildings.hiding))} of each from raiders`
+        : `Hides ${fullNum(hiddenAmount(s.buildings.hiding))} → ${fullNum(hiddenAmount(nextLevel))} of each from raiders`;
     case 'wall': {
       if (nextLevel === 1) return `Raises your defence against bandit raids (×${wallMultiplier(1).toFixed(2)} at level 1)`;
       const now = wallMultiplier(s.buildings.wall);

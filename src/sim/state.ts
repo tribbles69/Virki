@@ -8,7 +8,7 @@ import type { BattleReport, March } from './march';
 import type { Raid } from './raid';
 
 /** Bump when the save shape changes, and add a migration in src/game/migrate.ts. */
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 /** The entire game. Plain JSON-safe data only: it is what gets saved. */
 export interface GameState {
@@ -45,6 +45,8 @@ export interface GameState {
   dayKey: string;
   /** How many daily resets have run. */
   resetsDone: number;
+  /** When the camps last respawned (0 before the first reset). Scouting intel counts from here. */
+  lastResetAt: number;
   /** Bandit raids on their way to the village (seen or not yet spotted). */
   raids: Raid[];
 }
@@ -95,6 +97,7 @@ export function newGame(seed: string, now: number): GameState {
     resetsScheduledUntil: now,
     dayKey: '',
     resetsDone: 0,
+    lastResetAt: 0,
     raids: [],
   };
 }

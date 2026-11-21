@@ -13,6 +13,7 @@ import {
   SAVE_VERSION,
   UNIT_DATA,
   type GameState,
+  noTroops,
 } from '../src/sim';
 import { migrateSave } from '../src/game/migrate';
 
@@ -162,7 +163,7 @@ describe('save upgrade from v1', () => {
     const loaded = migrateSave(v1);
     expect(loaded.version).toBe(SAVE_VERSION);
     expect(loaded.map).toEqual(fresh.map);
-    expect(loaded.troops).toEqual({ spear: 0, sword: 0, axe: 0 });
+    expect(loaded.troops).toEqual(noTroops());
     expect(loaded.recruitQueue).toEqual([]);
     expect(loaded.buildings.barracks).toBe(0);
     expect(loaded.buildings.woodcutter).toBe(7);
