@@ -18,3 +18,4 @@ Time and randomness are passed in. `test/sim-purity.test.ts` enforces this. See 
 - `march.ts`: `sendAttack`, `recallMarch`, `march-arrive` (battle, loot, report, turn for home) and `march-return` (soldiers and loot home) handlers. Soldiers away still use population. Reports are capped at 50.
 - `reports.ts`: report inbox commands: `unreadReports`, `markReportRead`, `markAllReportsRead`, `deleteReport`.
 - `daily.ts`: the 04:00 reset. `scheduleResets` queues reset times the app works out from the device clock (the sim never reads clocks); the `daily-reset` handler respawns every camp (rubber band on the whole army, seeded ±10% by date) and places the day's Warlord camp.
+- `defence.ts`: `wallMultiplier` (×1.74 at L20, ≈×3.34 at L100), `wallEra` (10 looks, DESIGN §5.1), `watchtowerWarning` (5 min at L1 → ~6 h at L30). Used by bandit raids.

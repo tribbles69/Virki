@@ -13,6 +13,8 @@ import {
 } from '../sim';
 import { effectLine } from './effects';
 import { clockTime, countdown, duration, fullNum, shortNum } from './format';
+import { wallArt } from './wallart';
+import { wallEra } from '../sim';
 
 const RES_ICON: Record<(typeof RESOURCES)[number], string> = { wood: '\u{1FAB5}', stone: '\u{1FAA8}', ore: '⛏️' };
 
@@ -40,6 +42,9 @@ export class VillageView {
   private queueTitle: HTMLElement;
   private queueTime: HTMLElement;
   private queueFill: HTMLElement;
+  private wallPic?: HTMLElement;
+  private wallEraLine?: HTMLElement;
+  private wallDrawn = -2;
   private rows = {} as Record<BuildingId, {
     level: HTMLElement;
     effect: HTMLElement;
@@ -119,7 +124,13 @@ export class VillageView {
       const button = el('button', 'upgrade');
       button.addEventListener('click', () => handlers.upgrade(b));
       foot.append(note, button);
-      card.append(head, effect, costRow, foot);
+      if (b === 'wall') {
+        this.wallPic = el('div', 'wall-art');
+        this.wallEraLine = el('p', 'wall-era muted small');
+        card.append(head, this.wallPic, this.wallEraLine, effect, costRow, foot);
+      } else {
+        card.append(head, effect, costRow, foot);
+      }
       list.append(card);
       this.rows[b] = { level, effect, costs, time, pop, button, note };
     }
@@ -157,6 +168,17 @@ export class VillageView {
       const building = info.nextLevel - 1 > info.level ? ` (building ${info.nextLevel - 1})` : '';
       row.level.textContent = info.level === 0 ? `Not built${building}` : `Level ${info.level}${building}`;
       row.effect.textContent = effectLine(s, b, info.nextLevel, maxed);
+      if (b === 'wall' && this.wallPic && this.wallEraLine) {
+        const era = wallEra(info.level);
+        const eraIndex = era?.index ?? -1;
+        if (eraIndex !== this.wallDrawn) {
+          this.wallDrawn = eraIndex;
+          this.wallPic.innerHTML = wallArt(era?.index, era ? `${era.name} wall` : 'Open ground, no wall yet');
+        }
+        this.wallEraLine.textContent = era
+          ? `${era.name}${era.next ? ` · next look at level ${era.next}` : ' · the final era'}`
+          : 'No wall yet · wooden stakes at level 1';
+      }
       row.costs.wood.parentElement!.hidden = maxed;
       for (const r of RESOURCES) {
         const short = s.resources[r] < info.cost[r];

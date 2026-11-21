@@ -18,7 +18,7 @@ Work down this list in order. When Aaron says "go", pick up the first unchecked 
 
 ## v0.3 — The bandits fight back
 - [x] Daily reset at 04:00 local, seeded camp respawn, daily Warlord camp
-- [ ] Wall (with era art placeholders) and Watchtower
+- [x] Wall (with era art placeholders) and Watchtower
 - [ ] Bandit raids on the player with warning time
 - [ ] Hiding Place, Stable + cavalry, Scouts
 
