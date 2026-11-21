@@ -17,3 +17,4 @@ Time and randomness are passed in. `test/sim-purity.test.ts` enforces this. See 
 - `battle.ts`: `fight` (TW-style: attack vs class-weighted defence, ±15% seeded luck, loser loses all, winner loses (loser/winner)^1.5), `carryCapacity`, `takeLoot` (even split across resources).
 - `march.ts`: `sendAttack`, `recallMarch`, `march-arrive` (battle, loot, report, turn for home) and `march-return` (soldiers and loot home) handlers. Soldiers away still use population. Reports are capped at 50.
 - `reports.ts`: report inbox commands: `unreadReports`, `markReportRead`, `markAllReportsRead`, `deleteReport`.
+- `daily.ts`: the 04:00 reset. `scheduleResets` queues reset times the app works out from the device clock (the sim never reads clocks); the `daily-reset` handler respawns every camp (rubber band on the whole army, seeded ±10% by date) and places the day's Warlord camp.

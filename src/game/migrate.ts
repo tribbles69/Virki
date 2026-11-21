@@ -24,6 +24,8 @@ export const MIGRATIONS: Record<number, Migration> = {
   2: (s) => ({ ...s, version: 3, map: generateMap(String(s.seed), armyAttack(isObj(s.troops) ? s.troops : {})) }),
   // v0.2: armies on the march and battle reports.
   3: (s) => ({ ...s, version: 4, marches: [], reports: [] }),
+  // v0.3: daily resets. Resets count from the last save, so any 04:00s missed since are caught up.
+  4: (s) => ({ ...s, version: 5, resetsScheduledUntil: s.time, dayKey: '', resetsDone: 0 }),
 };
 
 export class SaveError extends Error {}
@@ -94,7 +96,8 @@ function normalise(s: Record<string, unknown>): GameState {
   const map = s.map;
   if (!isObj(map) || typeof map.terrain !== 'string' || map.terrain.length !== MAP_SIZE * MAP_SIZE) throw bad('map');
   if (![...map.terrain].every((c) => c in TERRAIN)) throw bad('map terrain');
-  if (!Array.isArray(map.camps) || map.camps.length !== CAMP_COUNT) throw bad('camps');
+  // 8 raider camps, plus the daily Warlord once the first reset has run.
+  if (!Array.isArray(map.camps) || map.camps.length < CAMP_COUNT || map.camps.length > CAMP_COUNT + 1) throw bad('camps');
   for (const c of map.camps) {
     if (!isObj(c) || !isNum(c.id) || !isNum(c.x) || !isNum(c.y) || !isNum(c.tier) || !isObj(c.troops) || !isObj(c.loot)) {
       throw bad('camps');
@@ -130,5 +133,8 @@ function normalise(s: Record<string, unknown>): GameState {
     map: map as unknown as GameState['map'],
     marches: s.marches as GameState['marches'],
     reports: s.reports as GameState['reports'],
+    resetsScheduledUntil: isNum(s.resetsScheduledUntil) ? s.resetsScheduledUntil : s.time,
+    dayKey: typeof s.dayKey === 'string' ? s.dayKey : '',
+    resetsDone: isNum(s.resetsDone) ? s.resetsDone : 0,
   };
 }
