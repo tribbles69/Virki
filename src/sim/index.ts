@@ -21,3 +21,4 @@ export * from './data/defence';
 export * from './raid';
 export * from './smithy';
 export * from './data/smithy';
+export * from './metals';

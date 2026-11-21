@@ -12,6 +12,8 @@ import {
   MAX_CRAFT_TIER,
   TRACKS,
   newSmithy,
+  noMetals,
+  METALS,
   type GameState,
 } from '../sim';
 
@@ -35,6 +37,8 @@ export const MIGRATIONS: Record<number, Migration> = {
   6: (s) => ({ ...s, version: 7, lastResetAt: 0 }),
   // v0.4: Smithy research (craft tiers per unit and track).
   7: (s) => ({ ...s, version: 8, smithy: {}, researchQueue: [] }),
+  // v0.4: higher-tier ores, ingots and the forge queue.
+  8: (s) => ({ ...s, version: 9, ores: {}, ingots: {}, smeltQueue: [] }),
 };
 
 export class SaveError extends Error {}
@@ -135,6 +139,22 @@ function normalise(s: Record<string, unknown>): GameState {
       smithy[u][t] = tier;
     }
   }
+  if (!isObj(s.ores)) throw bad('ores');
+  if (!isObj(s.ingots)) throw bad('ingots');
+  if (!Array.isArray(s.smeltQueue)) throw bad('forge queue');
+  const ores = noMetals();
+  const ingots = noMetals();
+  for (const m of METALS) {
+    const o = s.ores[m] ?? 0;
+    const i = s.ingots[m] ?? 0;
+    if (!isNum(o) || o < 0) throw bad(`${m} ore`);
+    if (!isNum(i) || i < 0 || !Number.isInteger(i)) throw bad(`${m} ingots`);
+    ores[m] = m === 'copper' ? 0 : o;
+    ingots[m] = i;
+  }
+  for (const b of s.smeltQueue) {
+    if (!isObj(b) || !(METALS as readonly unknown[]).includes(b.metal) || !isNum(b.count) || !isNum(b.finishesAt)) throw bad('forge queue');
+  }
   if (!Array.isArray(s.raids)) throw bad('raids');
   for (const r of s.raids) if (!isObj(r) || !isNum(r.id) || !isNum(r.arriveAt) || !isObj(r.troops)) throw bad('raids');
   if (!Array.isArray(s.reports)) throw bad('reports');
@@ -162,5 +182,8 @@ function normalise(s: Record<string, unknown>): GameState {
     lastResetAt: isNum(s.lastResetAt) ? s.lastResetAt : 0,
     smithy,
     researchQueue: s.researchQueue as GameState['researchQueue'],
+    ores,
+    ingots,
+    smeltQueue: s.smeltQueue as GameState['smeltQueue'],
   };
 }

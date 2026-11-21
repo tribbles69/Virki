@@ -7,9 +7,11 @@ import { generateMap, type WorldMap } from './map';
 import type { BattleReport, March } from './march';
 import type { Raid } from './raid';
 import { newSmithy, type ResearchJob, type SmithyState } from './smithy';
+import { noMetals, type SmeltBatch } from './metals';
+import type { MetalId } from './data/resources';
 
 /** Bump when the save shape changes, and add a migration in src/game/migrate.ts. */
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 
 /** The entire game. Plain JSON-safe data only: it is what gets saved. */
 export interface GameState {
@@ -54,6 +56,12 @@ export interface GameState {
   smithy: SmithyState;
   /** Smithy research in progress. */
   researchQueue: ResearchJob[];
+  /** Higher-tier ore in store (copper ore is `resources.ore`; `ores.copper` stays 0). */
+  ores: Record<MetalId, number>;
+  /** Smelted ingots of every metal. */
+  ingots: Record<MetalId, number>;
+  /** Batches at the forge, in the order they'll finish. */
+  smeltQueue: SmeltBatch[];
 }
 
 export interface BuildJob {
@@ -106,5 +114,8 @@ export function newGame(seed: string, now: number): GameState {
     raids: [],
     smithy: newSmithy(),
     researchQueue: [],
+    ores: noMetals(),
+    ingots: noMetals(),
+    smeltQueue: [],
   };
 }

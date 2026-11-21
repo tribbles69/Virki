@@ -6,13 +6,14 @@ import { MARCH_ARRIVE, MARCH_RETURN, onMarchArrive, onMarchReturn } from './marc
 import { DAILY_RESET, onDailyReset } from './daily';
 import { RAID_ARRIVE, onRaidArrive } from './raid';
 import { RESEARCH_COMPLETE, onResearchComplete } from './smithy';
+import { SMELT_DONE, metalProduction, onSmeltDone } from './metals';
 
 /**
  * The live game's rules. Features add their continuous systems (production)
  * and event handlers (build finished, army arrived...) here as they land.
  */
 export const defaultRules: Rules = {
-  systems: [production],
+  systems: [production, metalProduction],
   handlers: {
     [BUILD_COMPLETE]: onBuildComplete,
     [RECRUIT_DONE]: onRecruitDone,
@@ -21,5 +22,6 @@ export const defaultRules: Rules = {
     [DAILY_RESET]: onDailyReset,
     [RAID_ARRIVE]: onRaidArrive,
     [RESEARCH_COMPLETE]: onResearchComplete,
+    [SMELT_DONE]: onSmeltDone,
   },
 };
