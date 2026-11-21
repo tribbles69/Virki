@@ -14,3 +14,4 @@ export * from './map';
 export * from './data/map';
 export * from './battle';
 export * from './march';
+export * from './reports';

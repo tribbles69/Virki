@@ -14,7 +14,7 @@ Work down this list in order. When Aaron says "go", pick up the first unchecked 
 - [x] Barracks + Spearman, Swordsman, Axeman; recruitment queue
 - [x] 15×15 map with 8 bandit camps
 - [x] Marches with travel time, TW-style battle resolution, loot carry
-- [ ] Battle reports
+- [x] Battle reports
 
 ## v0.3 — The bandits fight back
 - [ ] Daily reset at 04:00 local, seeded camp respawn, daily Warlord camp

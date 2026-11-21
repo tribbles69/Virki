@@ -43,3 +43,14 @@ export function clockTime(at: number, now: number): string {
   if (new Date(now).toDateString() === when.toDateString()) return hm;
   return `${when.toLocaleDateString('en-GB', { weekday: 'short' })} ${hm}`;
 }
+
+/** "just now", "5 min ago", "3 h ago", "2 days ago". */
+export function ago(ms: number): string {
+  const min = Math.floor(Math.max(0, ms) / 60_000);
+  if (min < 1) return 'just now';
+  if (min < 60) return `${min} min ago`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `${h} h ago`;
+  const d = Math.floor(h / 24);
+  return `${d} day${d === 1 ? '' : 's'} ago`;
+}
