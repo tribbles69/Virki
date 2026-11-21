@@ -1,6 +1,7 @@
 import { curveValue } from './curve';
 import { BUILDING_DATA, type BuildingId } from './data/buildings';
-import { RESOURCES, type ResourceId } from './data/resources';
+import { METAL_DATA, RESOURCES, type MetalId, type ResourceId } from './data/resources';
+import { ingotsPerRecruit } from './equip';
 import { BARRACKS_SPEED, RECRUIT_QUEUE_SLOTS, UNIT_DATA, type UnitId } from './data/units';
 import { population, storageCap } from './economy';
 import { cancel, schedule } from './events';
@@ -17,7 +18,7 @@ export function trainTime(unit: UnitId, barracksLevel: number): number {
   return Math.max(1_000, Math.round(ms / 1_000) * 1_000);
 }
 
-export type RecruitBlocker = 'locked' | 'queue-full' | 'bad-count' | 'population' | 'resources';
+export type RecruitBlocker = 'locked' | 'queue-full' | 'bad-count' | 'population' | 'resources' | 'ingots';
 
 export interface RecruitInfo {
   unit: UnitId;
@@ -47,6 +48,8 @@ export function maxRecruitable(state: GameState, unit: UnitId): number {
   const def = UNIT_DATA[unit];
   let max = Math.floor(population(state).free / def.pop);
   for (const r of RESOURCES) if (def.cost[r] > 0) max = Math.min(max, Math.floor(state.resources[r] / def.cost[r]));
+  // Soldiers of an upgraded type each need ingots for their weapons and armour.
+  for (const [m, n] of Object.entries(ingotsPerRecruit(state, unit)) as [MetalId, number][]) max = Math.min(max, Math.floor(state.ingots[m] / n));
   return Math.max(0, max);
 }
 
@@ -75,6 +78,7 @@ export function recruitBlocker(state: GameState, unit: UnitId, count: number): R
   if (!Number.isInteger(count) || count < 1) return 'bad-count';
   if (count * def.pop > population(state).free) return 'population';
   if (RESOURCES.some((r) => count * def.cost[r] > state.resources[r])) return 'resources';
+  if ((Object.entries(ingotsPerRecruit(state, unit)) as [MetalId, number][]).some(([m, n]) => count * n > state.ingots[m])) return 'ingots';
   return undefined;
 }
 
@@ -90,6 +94,10 @@ export function recruitBlockerText(state: GameState, unit: UnitId, blocker: Recr
       return 'Choose how many to train';
     case 'population':
       return 'Not enough population: upgrade the Farm';
+    case 'ingots':
+      return `Not enough ingots to arm them (${(Object.entries(ingotsPerRecruit(state, unit)) as [MetalId, number][])
+        .map(([m, n]) => `${n} ${METAL_DATA[m].name}`)
+        .join(' + ')} each)`;
     case 'resources':
       return RESOURCES.some((r) => UNIT_DATA[unit].cost[r] > storageCap(state))
         ? 'Too costly for your Warehouse'
@@ -121,12 +129,15 @@ export function recruit(state: GameState, unit: UnitId, count: number): RecruitR
   const def = UNIT_DATA[unit];
   const s = structuredClone(state);
   for (const r of RESOURCES) s.resources[r] -= count * def.cost[r];
+  const ingotsEach = ingotsPerRecruit(s, unit);
+  for (const [m, n] of Object.entries(ingotsEach) as [MetalId, number][]) s.ingots[m] -= count * n;
   const batch: RecruitBatch = {
     unit,
     count,
     trained: 0,
     perUnit: trainTime(unit, s.buildings[def.building]),
     paidEach: { ...def.cost },
+    ingotsEach,
     nextAt: 0,
     eventId: 0,
   };
@@ -147,6 +158,7 @@ export function cancelRecruit(state: GameState, index: number): { ok: true; stat
   const [batch] = s.recruitQueue.splice(index, 1);
   const left = batch.count - batch.trained;
   for (const r of RESOURCES) s.resources[r] += left * batch.paidEach[r as ResourceId];
+  for (const [m, n] of Object.entries(batch.ingotsEach ?? {}) as [MetalId, number][]) s.ingots[m] += left * n;
   if (wasTraining) {
     cancel(s, batch.eventId);
     const next = queueFor(s, building)[0];

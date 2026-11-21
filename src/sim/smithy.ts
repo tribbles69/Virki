@@ -14,6 +14,7 @@ import {
 } from './data/smithy';
 import { UNITS, UNIT_DATA, type UnitId } from './data/units';
 import { canAfford, storageCap, timeUntilAffordable } from './economy';
+import { metalMult } from './equip';
 import { cancel, schedule } from './events';
 import type { EventHandler } from './advance';
 import type { Gear } from './battle';
@@ -40,10 +41,16 @@ export const newSmithy = (): SmithyState =>
 export const craftName = (tier: number) => CRAFT_TIERS[Math.max(0, Math.min(MAX_CRAFT_TIER, tier))].name;
 export const craftMult = (tier: number) => CRAFT_TIERS[Math.max(0, Math.min(MAX_CRAFT_TIER, tier))].mult;
 
-/** The player's gear multipliers for battle: weapon tier → attack, armour tier → defence. */
+/** The player's gear multipliers for battle: craft tier × metal (weapons → attack, armour → defence). */
 export function playerGear(state: GameState): Gear {
   const gear: Gear = {};
-  for (const u of UNITS) gear[u] = { attack: craftMult(state.smithy[u].weapon), defence: craftMult(state.smithy[u].armour) };
+  for (const u of UNITS) {
+    const eq = state.equipment[u];
+    gear[u] = {
+      attack: craftMult(state.smithy[u].weapon) * metalMult(eq.weapon),
+      defence: craftMult(state.smithy[u].armour) * metalMult(eq.armour),
+    };
+  }
   return gear;
 }
 

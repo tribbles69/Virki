@@ -6,6 +6,9 @@ import {
   upgradeInfo,
   blockerText,
   BUILDING_DATA,
+  METAL_DATA,
+  craftName,
+  playerGear,
   RESOURCES,
   RESOURCE_NAMES,
   UNITS,
@@ -51,6 +54,7 @@ export class BarracksView {
     total: HTMLElement;
     note: HTMLElement;
     card: HTMLElement;
+    gear: HTMLElement;
   }>;
 
   constructor(root: HTMLElement, private handlers: BarracksHandlers) {
@@ -139,9 +143,10 @@ export class BarracksView {
       form.append(input, maxBtn, train);
       const total = el('p', 'b-note');
       const note = el('p', 'b-note');
-      card.append(head, role, stats, costs, form, total, note);
+      const gear = el('p', 'gear-line');
+      card.append(head, role, gear, stats, costs, form, total, note);
       list.append(card);
-      this.cards[u] = { owned, each, time, input, maxBtn, train, total, note, card };
+      this.cards[u] = { owned, each, time, input, maxBtn, train, total, note, card, gear };
       input.addEventListener('input', () => this.last && this.updateCard(this.last, u));
     }
     this.body.append(list);
@@ -229,6 +234,11 @@ export class BarracksView {
     const c = this.cards[u];
     const def = UNIT_DATA[u];
     const info = recruitInfo(s, u);
+    // Kit from the Smithy and the forge, and what it does to this unit's numbers.
+    const tier = s.smithy[u];
+    const eq = s.equipment[u];
+    const g = playerGear(s)[u] ?? { attack: 1, defence: 1 };
+    c.gear.textContent = `${craftName(tier.weapon)} ${METAL_DATA[eq.weapon].name} weapons · ${craftName(tier.armour)} ${METAL_DATA[eq.armour].name} armour · ⚔️ ×${g.attack.toFixed(2)} 🛡️ ×${g.defence.toFixed(2)}`;
     c.owned.textContent = info.inTraining ? `${fullNum(info.owned)} (+${info.inTraining})` : fullNum(info.owned);
     for (const r of RESOURCES) c.each[r].textContent = `${RES_ICON[r]} ${def.cost[r]}`;
     c.time.textContent = `⏱ ${duration(info.time)}`;

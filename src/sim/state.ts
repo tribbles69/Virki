@@ -9,9 +9,10 @@ import type { Raid } from './raid';
 import { newSmithy, type ResearchJob, type SmithyState } from './smithy';
 import { noMetals, type SmeltBatch } from './metals';
 import type { MetalId } from './data/resources';
+import { newEquipment, type Equipment } from './equip';
 
 /** Bump when the save shape changes, and add a migration in src/game/migrate.ts. */
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 
 /** The entire game. Plain JSON-safe data only: it is what gets saved. */
 export interface GameState {
@@ -62,6 +63,8 @@ export interface GameState {
   ingots: Record<MetalId, number>;
   /** Batches at the forge, in the order they'll finish. */
   smeltQueue: SmeltBatch[];
+  /** Metal of each unit type's weapons and armour. */
+  equipment: Equipment;
 }
 
 export interface BuildJob {
@@ -85,6 +88,8 @@ export interface RecruitBatch {
   perUnit: number;
   /** Price of one, for refunds. */
   paidEach: Record<ResourceId, number>;
+  /** Ingots paid per soldier to arm them (refunded with them). Missing on batches from before v0.4.3. */
+  ingotsEach?: Partial<Record<MetalId, number>>;
   /** When the soldier in training finishes (first batch only; 0 while waiting). */
   nextAt: number;
   /** The queued 'recruit-done' event (first batch only; 0 while waiting). */
@@ -117,5 +122,6 @@ export function newGame(seed: string, now: number): GameState {
     ores: noMetals(),
     ingots: noMetals(),
     smeltQueue: [],
+    equipment: newEquipment(),
   };
 }
