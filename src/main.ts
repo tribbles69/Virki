@@ -20,12 +20,14 @@ import {
   markAllReportsRead,
   markReportRead,
   unreadReports,
+  visibleRaids,
   type GameState,
 } from './sim';
 import { clockTime } from './ui/format';
 import { BarracksView } from './ui/barracks';
 import { MapView } from './ui/mapview';
 import { ReportsView } from './ui/reports';
+import { DefenceView } from './ui/defences';
 import { SaveStore } from './game/db';
 import { Game, type StartResult } from './game/game';
 import { exportFileName } from './game/saveFile';
@@ -44,6 +46,7 @@ app.innerHTML = `
       <button class="tab" role="tab" data-tab="map">Map</button>
       <button class="tab" role="tab" data-tab="reports">Reports<span class="badge" id="unread" hidden></span></button>
     </nav>
+    <button class="raid-banner" id="raid-banner" hidden></button>
   </header>
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
   <main id="main"><p class="muted center">Loading your village…</p></main>
@@ -83,6 +86,14 @@ function welcome(s: CatchUpSummary | undefined, source: StartResult['source']): 
   if (s.trained.length) bits.push(`${s.trained.map((t) => t.label).join(' and ')} trained`);
   const fought = s.battles.won + s.battles.lost;
   if (fought) bits.push(`${fought} battle${fought === 1 ? '' : 's'} fought (${s.battles.won} won)`);
+  const raided = s.raids.held + s.raids.lost;
+  if (raided) {
+    bits.push(
+      s.raids.lost === 0
+        ? `bandits raided you ${raided === 1 ? 'once' : `${raided} times`} and your village held`
+        : `bandits raided you ${raided === 1 ? 'once' : `${raided} times`} (${s.raids.lost} got through: see Reports)`,
+    );
+  }
   if (s.resets) bits.push(`the bandit camps are back${s.warlord ? ` and ${s.warlord} has made camp` : ''}`);
   return `Away for ${formatDuration(s.awayMs)}.${bits.length ? ` ${bits.join(', ')}.` : ''}`;
 }
@@ -199,6 +210,7 @@ async function main() {
       await game.act((s) => cancelLastUpgrade(s));
     },
   });
+  const defenceView = new DefenceView(villagePane, $('raid-banner'), () => showTab('village'));
 
   const greeting = started.warning ?? welcome(started.summary, started.source);
   if (greeting) toast(greeting, started.warning ? 'error' : 'info', 10_000);
@@ -213,6 +225,11 @@ async function main() {
     const prev = last.recruitQueue[0];
     if (prev && s.recruitQueue.length < last.recruitQueue.length && s.troops[prev.unit] > last.troops[prev.unit]) {
       toast(`${prev.count} ${prev.count === 1 ? UNIT_DATA[prev.unit].name : UNIT_DATA[prev.unit].plural} ready for battle.`);
+    }
+    // The Watchtower spots a raid.
+    const seenRaids = new Set(visibleRaids(last).map((r) => r.id));
+    for (const r of visibleRaids(s)) {
+      if (!seenRaids.has(r.id)) toast(`⚠️ Watchtower: bandits from ${r.campName} are coming! They land at ${clockTime(r.arriveAt, Date.now())}.`, 'error', 10_000);
     }
     // A daily reset while the app is open.
     if (s.resetsDone > last.resetsDone) {
@@ -239,6 +256,7 @@ async function main() {
     barracks.update(s, now);
     mapView.update(s, now);
     reportsView.update(s, now);
+    defenceView.update(s, now);
     const unread = unreadReports(s);
     unreadBadge.hidden = unread === 0;
     unreadBadge.textContent = unread > 99 ? '99+' : String(unread);

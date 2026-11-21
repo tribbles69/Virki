@@ -26,6 +26,8 @@ export const MIGRATIONS: Record<number, Migration> = {
   3: (s) => ({ ...s, version: 4, marches: [], reports: [] }),
   // v0.3: daily resets. Resets count from the last save, so any 04:00s missed since are caught up.
   4: (s) => ({ ...s, version: 5, resetsScheduledUntil: s.time, dayKey: '', resetsDone: 0 }),
+  // v0.3: bandit raids on the village.
+  5: (s) => ({ ...s, version: 6, raids: [] }),
 };
 
 export class SaveError extends Error {}
@@ -115,6 +117,8 @@ function normalise(s: Record<string, unknown>): GameState {
       (m.sent as Record<string, unknown>)[u] = isNum(m.sent[u]) ? m.sent[u] : 0;
     }
   }
+  if (!Array.isArray(s.raids)) throw bad('raids');
+  for (const r of s.raids) if (!isObj(r) || !isNum(r.id) || !isNum(r.arriveAt) || !isObj(r.troops)) throw bad('raids');
   if (!Array.isArray(s.reports)) throw bad('reports');
   for (const r of s.reports) if (!isObj(r) || !isNum(r.id) || typeof r.won !== 'boolean') throw bad('reports');
 
@@ -136,5 +140,6 @@ function normalise(s: Record<string, unknown>): GameState {
     resetsScheduledUntil: isNum(s.resetsScheduledUntil) ? s.resetsScheduledUntil : s.time,
     dayKey: typeof s.dayKey === 'string' ? s.dayKey : '',
     resetsDone: isNum(s.resetsDone) ? s.resetsDone : 0,
+    raids: s.raids as GameState['raids'],
   };
 }

@@ -19,8 +19,10 @@ export interface CatchUpSummary {
   upgraded: { building: BuildingId; name: string; level: number }[];
   /** Soldiers that finished training, e.g. "12 Spearmen". */
   trained: { unit: UnitId; count: number; label: string }[];
-  /** Battles fought while away. */
+  /** Your attacks resolved while away. */
   battles: { won: number; lost: number };
+  /** Bandit raids on the village while away. */
+  raids: { held: number; lost: number };
   /** Daily resets that happened while away, and today's Warlord if there is one. */
   resets: number;
   warlord?: string;
@@ -45,10 +47,22 @@ export function summarise(before: GameState, after: GameState): CatchUpSummary {
     .map((t) => ({ ...t, label: `${t.count} ${t.count === 1 ? UNIT_DATA[t.unit].name : UNIT_DATA[t.unit].plural}` }));
   const seen = new Set(before.reports.map((r) => r.id));
   const fresh = after.reports.filter((r) => !seen.has(r.id));
-  const battles = { won: fresh.filter((r) => r.won).length, lost: fresh.filter((r) => !r.won).length };
+  const attacks = fresh.filter((r) => r.kind !== 'raid');
+  const defences = fresh.filter((r) => r.kind === 'raid');
+  const battles = { won: attacks.filter((r) => r.won).length, lost: attacks.filter((r) => !r.won).length };
+  const raids = { held: defences.filter((r) => r.won).length, lost: defences.filter((r) => !r.won).length };
   const resets = after.resetsDone - before.resetsDone;
   const warlord = resets > 0 ? after.map.camps.find((c) => c.kind === 'warlord')?.name : undefined;
-  return { awayMs: Math.max(0, after.time - before.time), gained, upgraded, trained, battles, resets, ...(warlord ? { warlord } : {}) };
+  return {
+    awayMs: Math.max(0, after.time - before.time),
+    gained,
+    upgraded,
+    trained,
+    battles,
+    raids,
+    resets,
+    ...(warlord ? { warlord } : {}),
+  };
 }
 
 /** "3 h 20 min", "2 days 4 h", "45 s". */

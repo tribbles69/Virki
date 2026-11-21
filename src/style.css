@@ -212,3 +212,17 @@ p.b-note { margin: 6px 0 0; }
 .wall-art { margin: 8px 0 4px; border-radius: 6px; overflow: hidden; line-height: 0; }
 .wall-art svg { width: 100%; height: auto; display: block; image-rendering: pixelated; }
 .wall-era { margin: 0 0 4px; }
+
+/* Raids */
+.raid-banner {
+  display: block; width: 100%; margin-top: 8px; min-height: 36px; padding: 6px 10px;
+  background: #7a2a1f; color: #ffe3d8; border: 1px solid var(--bad); border-radius: 6px;
+  font-weight: 700; text-align: left; white-space: normal;
+  animation: raid-pulse 2s ease-in-out infinite;
+}
+@keyframes raid-pulse { 50% { background: #933426; } }
+@media (prefers-reduced-motion: reduce) { .raid-banner { animation: none; } }
+.defence .raid-row { padding: 6px 0; border-bottom: 1px solid var(--line); }
+.raid-title { font-weight: 700; color: var(--bad); }
+.raid-time { font-size: 0.85rem; color: var(--accent); font-variant-numeric: tabular-nums; }
+.defence .b-effect { margin-bottom: 0; }

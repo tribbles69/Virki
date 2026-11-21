@@ -18,3 +18,4 @@ export * from './reports';
 export * from './daily';
 export * from './defence';
 export * from './data/defence';
+export * from './raid';

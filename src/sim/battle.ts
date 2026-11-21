@@ -67,10 +67,17 @@ function applyLosses(t: Partial<Troops>, share: number): { lost: Troops; left: T
  * (other/own)^1.5 of its soldiers; the loser loses everyone. A tie goes to the
  * defender. An empty camp is a free win.
  */
-export function fight(attackers: Partial<Troops>, defenders: Partial<Troops>, rng: Rng): BattleResult {
+export interface DefenceBonus {
+  /** Wall multiplier applied to all defence (1 = no wall). */
+  multiplier?: number;
+  /** Flat defence that doesn't die (the village militia), before the multiplier. */
+  base?: number;
+}
+
+export function fight(attackers: Partial<Troops>, defenders: Partial<Troops>, rng: Rng, bonus: DefenceBonus = {}): BattleResult {
   const luck = Math.round((rng.next() * 2 - 1) * LUCK_RANGE * 1000) / 1000;
   const att = attackStrength(attackers) * (1 + luck);
-  const def = defenceAgainst(attackers, defenders);
+  const def = (defenceAgainst(attackers, defenders) + (bonus.base ?? 0)) * (bonus.multiplier ?? 1);
   const attackerWon = att > def;
   const winnerShare = attackerWon ? (att > 0 ? (def / att) ** LOSS_EXPONENT : 0) : def > 0 ? (att / def) ** LOSS_EXPONENT : 0;
   const a = applyLosses(attackers, attackerWon ? winnerShare : 1);
