@@ -12,6 +12,7 @@ import { RESOURCES } from './data/resources';
 import { UNITS } from './data/units';
 import { armyAttack, campGarrison, campLoot, distanceFromVillage, terrainAt, type Camp } from './map';
 import { troopsAway } from './march';
+import { rollRaids } from './raid';
 import { schedule } from './events';
 import type { EventHandler } from './advance';
 import type { GameState } from './state';
@@ -116,6 +117,7 @@ export const onDailyReset: EventHandler = (state, event) => {
   state.map.camps = camps;
   state.dayKey = dayKey;
   state.resetsDone += 1;
+  rollRaids(state, event.at, rng);
 };
 
 /** True for the daily Warlord camp. */

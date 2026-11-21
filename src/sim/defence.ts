@@ -1,5 +1,18 @@
 import { curveValue } from './curve';
-import { WALL_ERAS, WALL_FAST_LEVELS, WALL_FAST_STEP, WALL_SLOW_STEP, WATCHTOWER_WARNING } from './data/defence';
+import {
+  MILITIA_BASE,
+  MILITIA_PER_WALL_LEVEL,
+  WALL_ERAS,
+  WALL_FAST_LEVELS,
+  WALL_FAST_STEP,
+  WALL_SLOW_STEP,
+  WATCHTOWER_WARNING,
+} from './data/defence';
+
+/** The village's own militia defence (before the wall multiplier). */
+export function militia(wallLevel: number): number {
+  return MILITIA_BASE + MILITIA_PER_WALL_LEVEL * wallLevel;
+}
 
 /** Defence multiplier from the Wall. L0 = ×1, L20 = ×1.74, L100 ≈ ×3.34. */
 export function wallMultiplier(level: number): number {

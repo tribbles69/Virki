@@ -5,9 +5,10 @@ import { BUILDINGS, BUILDING_DATA, type BuildingId } from './data/buildings';
 import { UNITS, type UnitId } from './data/units';
 import { generateMap, type WorldMap } from './map';
 import type { BattleReport, March } from './march';
+import type { Raid } from './raid';
 
 /** Bump when the save shape changes, and add a migration in src/game/migrate.ts. */
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 /** The entire game. Plain JSON-safe data only: it is what gets saved. */
 export interface GameState {
@@ -44,6 +45,8 @@ export interface GameState {
   dayKey: string;
   /** How many daily resets have run. */
   resetsDone: number;
+  /** Bandit raids on their way to the village (seen or not yet spotted). */
+  raids: Raid[];
 }
 
 export interface BuildJob {
@@ -92,5 +95,6 @@ export function newGame(seed: string, now: number): GameState {
     resetsScheduledUntil: now,
     dayKey: '',
     resetsDone: 0,
+    raids: [],
   };
 }

@@ -4,6 +4,7 @@ import { BUILD_COMPLETE, onBuildComplete } from './build';
 import { RECRUIT_DONE, onRecruitDone } from './recruit';
 import { MARCH_ARRIVE, MARCH_RETURN, onMarchArrive, onMarchReturn } from './march';
 import { DAILY_RESET, onDailyReset } from './daily';
+import { RAID_ARRIVE, onRaidArrive } from './raid';
 
 /**
  * The live game's rules. Features add their continuous systems (production)
@@ -17,5 +18,6 @@ export const defaultRules: Rules = {
     [MARCH_ARRIVE]: onMarchArrive,
     [MARCH_RETURN]: onMarchReturn,
     [DAILY_RESET]: onDailyReset,
+    [RAID_ARRIVE]: onRaidArrive,
   },
 };

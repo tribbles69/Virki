@@ -31,8 +31,15 @@ export interface March {
   eventId: number;
 }
 
+/**
+ * A battle, always told from the player's side. For your attacks: sent/lost
+ * are your soldiers, defenders are the bandits, loot is what you carried off.
+ * For bandit raids (kind 'raid'): sent/lost are the bandits, defenders are
+ * your soldiers at home, loot is what they stole, and won = the village held.
+ */
 export interface BattleReport {
   id: number;
+  kind?: 'raid';
   at: number;
   campId: number;
   campName: string;
@@ -194,6 +201,11 @@ export function troopsAway(state: GameState): Troops {
 /** Plain-English one-liner for a battle (used by toasts until the reports screen lands). */
 export function reportHeadline(r: BattleReport): string {
   const lootTotal = RESOURCES.reduce((n, k) => n + r.loot[k], 0);
+  if (r.kind === 'raid') {
+    return r.won
+      ? `Bandits from ${r.campName} attacked, and your village held!`
+      : `Bandits from ${r.campName} broke through${lootTotal > 0 ? ` and stole ${lootTotal.toLocaleString('en-GB')} resources` : ''}.`;
+  }
   return r.won
     ? `Victory at ${r.campName}! ${lootTotal > 0 ? `Your soldiers carry ${lootTotal.toLocaleString('en-GB')} loot home.` : 'The camp had nothing left to take.'}`
     : `Defeat at ${r.campName}. None of your ${troopCount(r.sent)} soldiers came back.`;

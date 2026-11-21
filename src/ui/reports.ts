@@ -58,7 +58,9 @@ export class ReportsView {
       const summary = el('button', 'report-summary');
       summary.setAttribute('aria-expanded', String(this.openId === r.id));
       const line1 = el('div', 'report-line');
-      line1.append(el('span', 'report-badge', r.won ? 'Victory' : 'Defeat'), el('span', 'report-camp', r.campName));
+      const badge = r.kind === 'raid' ? (r.won ? 'Held' : 'Raided') : r.won ? 'Victory' : 'Defeat';
+      const title = r.kind === 'raid' ? `Raid by ${r.campName}` : r.campName;
+      line1.append(el('span', 'report-badge', badge), el('span', 'report-camp', title));
       const when = el('span', 'report-when');
       this.times.push({ el: when, at: r.at });
       line1.append(when);
@@ -80,6 +82,11 @@ export class ReportsView {
     const sent = troopCount(r.sent);
     const lost = troopCount(r.lost);
     const loot = RESOURCES.reduce((n, k) => n + r.loot[k], 0);
+    if (r.kind === 'raid') {
+      const yours = troopCount(r.defendersLost);
+      const fell = yours === 0 ? 'no soldiers lost' : `${fullNum(yours)} soldiers lost`;
+      return r.won ? `${fullNum(sent)} bandits beaten off · ${fell}` : `${fell} · ${fullNum(loot)} stolen`;
+    }
     if (!r.won) return `All ${fullNum(sent)} soldiers lost`;
     const losses = lost === 0 ? 'no losses' : `${fullNum(lost)} of ${fullNum(sent)} lost`;
     return `${losses} · ${loot > 0 ? `${fullNum(loot)} loot` : 'no loot left'}`;
@@ -91,6 +98,7 @@ export class ReportsView {
     const day = when.toDateString() === new Date(now).toDateString() ? 'Today' : when.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
     const hm = when.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     d.append(el('p', 'muted small', `${day} at ${hm} · ${r.campTier > 8 ? 'Warlord camp' : `toughness ${r.campTier}/8`}`));
+    if (r.kind === 'raid') return this.raidDetail(d, r);
 
     d.append(this.table('Your army', ['Sent', 'Lost', 'Back'], r.sent, (u) => [r.sent[u], r.lost[u], r.sent[u] - r.lost[u]]));
     const bandits = troopCount(r.defenders);
@@ -130,6 +138,49 @@ export class ReportsView {
       this.handlers.remove(r.id);
     });
     actions.append(again, del);
+    d.append(actions);
+    return d;
+  }
+
+  /** A bandit raid on the village, told from your side. */
+  private raidDetail(d: HTMLElement, r: BattleReport): HTMLElement {
+    d.append(this.table('Bandits', ['Came', 'Lost', 'Left'], r.sent, (u) => [r.sent[u], r.lost[u], r.sent[u] - r.lost[u]]));
+    if (troopCount(r.defenders) > 0) {
+      d.append(this.table('Your soldiers', ['Home', 'Lost', 'Left'], r.defenders, (u) => [r.defenders[u], r.defendersLost[u], r.defenders[u] - r.defendersLost[u]]));
+    } else {
+      d.append(el('p', 'b-effect', 'No soldiers were home: only the militia and your Wall stood in the way.'));
+    }
+    const facts = el('div', 'report-facts');
+    const luck = el('span', r.luck <= 0 ? 'good' : 'bad', `${r.luck >= 0 ? '+' : ''}${(r.luck * 100).toFixed(1)}%`);
+    const luckLine = el('p');
+    luckLine.append('Bandits’ luck ', luck);
+    facts.append(luckLine);
+    if (r.attackStrength !== undefined && r.defenceStrength !== undefined) {
+      facts.append(el('p', undefined, `Their attack ${fullNum(r.attackStrength)} vs your defence ${fullNum(r.defenceStrength)} (with Wall and militia)`));
+    }
+    d.append(facts);
+    const stolen = RESOURCES.reduce((n, k) => n + r.loot[k], 0);
+    const loot = el('div', 'b-costs');
+    if (r.won) {
+      loot.append(el('span', 'muted', 'Nothing was taken.'));
+    } else {
+      loot.append(el('span', 'muted', 'Stolen'));
+      for (const k of RESOURCES) loot.append(el('span', 'cost bad', `${RES_ICON[k]} ${fullNum(r.loot[k])}`));
+      if (stolen === 0) loot.append(el('span', 'muted', '(your stores were empty)'));
+    }
+    d.append(loot);
+    const actions = el('div', 'report-actions');
+    if (r.campTier <= 8) {
+      const back = el('button', 'upgrade small-btn', 'Strike back');
+      back.addEventListener('click', () => this.handlers.attackAgain(r.campId));
+      actions.append(back);
+    }
+    const del = el('button', 'ghost small-btn', 'Delete');
+    del.addEventListener('click', () => {
+      this.openId = null;
+      this.handlers.remove(r.id);
+    });
+    actions.append(del);
     d.append(actions);
     return d;
   }
