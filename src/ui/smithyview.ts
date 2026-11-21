@@ -7,6 +7,13 @@ import {
   RESOURCES,
   TRACKS,
   UNITS,
+  equipBlockerText,
+  equipInfo,
+  metalMult,
+  unlockedMetals,
+  INGOTS_PER_SOLDIER,
+  METAL_DATA,
+  type MetalId,
   UNIT_DATA,
   type GameState,
   type Track,
@@ -28,6 +35,7 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: 
 export interface SmithyHandlers {
   research(unit: UnitId, track: Track): void;
   cancel(): void;
+  equip(unit: UnitId, track: Track, metal: MetalId): void;
 }
 
 interface Row {
@@ -36,6 +44,9 @@ interface Row {
   cost: HTMLElement;
   note: HTMLElement;
   button: HTMLButtonElement;
+  metalSelect: HTMLSelectElement;
+  equipBtn: HTMLButtonElement;
+  equipNote: HTMLElement;
 }
 
 /** Smithy section of the Army tab: research in progress, then weapons and armour for each unit. */
@@ -48,6 +59,8 @@ export class SmithyView {
   private jobTime: HTMLElement;
   private jobFill: HTMLElement;
   private rows = {} as Record<UnitId, Record<Track, Row>>;
+  private metalsSig = '';
+  private last?: GameState;
 
   constructor(root: HTMLElement, handlers: SmithyHandlers) {
     this.head = el('h2', 'group-head', 'Smithy');
@@ -85,8 +98,17 @@ export class SmithyView {
         const button = el('button', 'upgrade small-btn', 'Research');
         button.addEventListener('click', () => handlers.research(u, t));
         row.append(text, button);
-        card.append(row);
-        this.rows[u][t] = { now, next, cost, note, button };
+        // Metal: pick what this track is made of; ingots for every soldier of the type.
+        const equipRow = el('div', 'equip-row');
+        const metalSelect = el('select', 'count metal-select');
+        metalSelect.setAttribute('aria-label', `${UNIT_DATA[u].name} ${TRACK_LABEL[t].toLowerCase()} metal`);
+        const equipBtn = el('button', 'ghost small-btn', 'Equip');
+        const equipNote = el('div', 'b-note');
+        equipRow.append(metalSelect, equipBtn);
+        metalSelect.addEventListener('change', () => this.last && this.refreshEquip(this.last, u, t));
+        equipBtn.addEventListener('click', () => handlers.equip(u, t, metalSelect.value as MetalId));
+        card.append(row, equipRow, equipNote);
+        this.rows[u][t] = { now, next, cost, note, button, metalSelect, equipBtn, equipNote };
       }
       this.body.append(card);
     }
@@ -101,8 +123,23 @@ export class SmithyView {
         : `Build a Smithy in the Village (needs ${Object.entries(BUILDING_DATA.smithy.requires ?? {})
             .map(([b, l]) => `${BUILDING_DATA[b as keyof typeof BUILDING_DATA].name} ${l}`)
             .join(', ')}) to research better weapons and armour.`;
+    this.last = s;
     this.body.hidden = lvl === 0;
     if (lvl === 0) return;
+
+    // Rebuild the metal pickers only when a new metal unlocks.
+    const metals = unlockedMetals(s);
+    const metalsSig = metals.join(',');
+    if (metalsSig !== this.metalsSig) {
+      this.metalsSig = metalsSig;
+      for (const u of UNITS) {
+        for (const t of TRACKS) {
+          const sel = this.rows[u][t].metalSelect;
+          sel.replaceChildren(...metals.map((m) => Object.assign(el('option', undefined, METAL_DATA[m].name), { value: m })));
+          sel.value = s.equipment[u][t];
+        }
+      }
+    }
 
     const job = s.researchQueue[0];
     this.job.hidden = !job;
@@ -116,7 +153,9 @@ export class SmithyView {
       for (const t of TRACKS) {
         const r = this.rows[u][t];
         const info = researchInfo(s, u, t);
-        r.now.textContent = `${TRACK_LABEL[t]}: ${craftName(info.tier)} (×${craftMult(info.tier).toFixed(2)} ${TRACK_STAT[t]})`;
+        const metal = s.equipment[u][t];
+        r.now.textContent = `${TRACK_LABEL[t]}: ${craftName(info.tier)} ${METAL_DATA[metal].name} (×${(craftMult(info.tier) * metalMult(metal)).toFixed(2)} ${TRACK_STAT[t]})`;
+        this.refreshEquip(s, u, t);
         const maxed = info.blocker === 'max-tier';
         const researching = s.researchQueue.some((j) => j.unit === u && j.track === t);
         r.next.textContent = maxed
@@ -134,5 +173,22 @@ export class SmithyView {
               : '';
       }
     }
+  }
+
+  private refreshEquip(s: GameState, u: UnitId, t: Track) {
+    const r = this.rows[u][t];
+    const metal = (r.metalSelect.value || 'copper') as MetalId;
+    const info = equipInfo(s, u, t, metal);
+    const current = s.equipment[u][t];
+    r.equipBtn.disabled = !!info.blocker;
+    r.equipBtn.textContent = info.blocker === 'same' ? `In ${METAL_DATA[current].name}` : info.ingots > 0 ? `Equip · ${shortNum(info.ingots)} ingots` : 'Equip';
+    r.equipNote.textContent =
+      info.blocker === 'same'
+        ? ''
+        : info.blocker
+          ? equipBlockerText(info)
+          : info.ingots > 0
+            ? `Arms all ${shortNum(info.soldiers)} ${UNIT_DATA[u].plural} (${INGOTS_PER_SOLDIER[u]} ingot${INGOTS_PER_SOLDIER[u] === 1 ? '' : 's'} each) · ${METAL_DATA[metal].name} ×${metalMult(metal).toFixed(2)}`
+            : `Switch to ${METAL_DATA[metal].name} ×${metalMult(metal).toFixed(2)} (free, no refund)`;
   }
 }

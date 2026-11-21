@@ -256,3 +256,10 @@ p.b-note { margin: 6px 0 0; }
 .forge .recruit button { padding: 8px 10px; }
 .forge .recruit { flex-wrap: wrap; }
 .forge .recruit .upgrade { flex: 1 1 100%; }
+
+/* Equipment */
+.equip-row { display: flex; gap: 8px; align-items: center; margin: 2px 0 0; }
+.equip-row .metal-select { flex: 0 0 7.5rem; min-height: 36px; }
+.smithy-unit > .b-note { margin: 2px 0 6px; font-size: 0.8rem; }
+.smithy-unit > .b-note:empty { display: none; }
+.gear-line { margin: 0 0 6px; font-size: 0.8rem; color: var(--accent); }

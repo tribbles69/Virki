@@ -13,6 +13,7 @@ import {
   TRACKS,
   newSmithy,
   noMetals,
+  newEquipment,
   METALS,
   type GameState,
 } from '../sim';
@@ -39,6 +40,8 @@ export const MIGRATIONS: Record<number, Migration> = {
   7: (s) => ({ ...s, version: 8, smithy: {}, researchQueue: [] }),
   // v0.4: higher-tier ores, ingots and the forge queue.
   8: (s) => ({ ...s, version: 9, ores: {}, ingots: {}, smeltQueue: [] }),
+  // v0.4: re-equipping units with metal.
+  9: (s) => ({ ...s, version: 10, equipment: {} }),
 };
 
 export class SaveError extends Error {}
@@ -155,6 +158,16 @@ function normalise(s: Record<string, unknown>): GameState {
   for (const b of s.smeltQueue) {
     if (!isObj(b) || !(METALS as readonly unknown[]).includes(b.metal) || !isNum(b.count) || !isNum(b.finishesAt)) throw bad('forge queue');
   }
+  if (!isObj(s.equipment)) throw bad('equipment');
+  const equipment = newEquipment();
+  for (const u of UNITS) {
+    const row = s.equipment[u];
+    for (const t of TRACKS) {
+      const m = isObj(row) && row[t] !== undefined ? row[t] : 'copper';
+      if (!(METALS as readonly unknown[]).includes(m)) throw bad(`equipment ${u}`);
+      equipment[u][t] = m as (typeof METALS)[number];
+    }
+  }
   if (!Array.isArray(s.raids)) throw bad('raids');
   for (const r of s.raids) if (!isObj(r) || !isNum(r.id) || !isNum(r.arriveAt) || !isObj(r.troops)) throw bad('raids');
   if (!Array.isArray(s.reports)) throw bad('reports');
@@ -185,5 +198,6 @@ function normalise(s: Record<string, unknown>): GameState {
     ores,
     ingots,
     smeltQueue: s.smeltQueue as GameState['smeltQueue'],
+    equipment,
   };
 }

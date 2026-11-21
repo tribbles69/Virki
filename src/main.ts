@@ -11,6 +11,9 @@ import {
   researchInfo,
   startResearch,
   cancelLastSmelt,
+  equip,
+  equipBlockerText,
+  equipInfo,
   smelt,
   smeltBlockerText,
   METAL_DATA,
@@ -221,6 +224,22 @@ async function main() {
       if (!job) return;
       if (!confirm(`Cancel ${UNIT_DATA[job.unit].name} ${job.track === 'weapon' ? 'weapons' : 'armour'} research? You’ll get a full refund.`)) return;
       await game.act((s) => cancelResearch(s));
+    },
+    equip: async (unit, track, metal) => {
+      const info = equipInfo(game.state, unit, track, metal);
+      if (info.blocker) {
+        toast(equipBlockerText(info), 'error', 3_000);
+        return;
+      }
+      const plural = UNIT_DATA[unit].plural;
+      const what = `${plural}${plural.endsWith('s') ? '’' : '’s'} ${track === 'weapon' ? 'weapons' : 'armour'}`;
+      const ask =
+        info.ingots > 0
+          ? `Re-arm ${what} with ${METAL_DATA[metal].name}? It costs ${info.ingots} ${METAL_DATA[metal].name} ingots for your ${info.soldiers} soldiers, and new recruits will need ingots too.`
+          : `Switch ${what} to ${METAL_DATA[metal].name}? It's free, but you won't get ingots back.`;
+      if (!confirm(ask)) return;
+      const r = await game.act((s) => equip(s, unit, track, metal));
+      if (r.ok) toast(`${UNIT_DATA[unit].plural} now ${track === 'weapon' ? 'carry' : 'wear'} ${METAL_DATA[metal].name} ${track === 'weapon' ? 'weapons' : 'armour'}.`);
     },
   });
   const forgeView = new ForgeView(barracksPane, {
